@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import insert
-from .generate_database import engine, Run, NotebookMetadata, Similarity
+from modelith.utils.generate_database import engine, Run, NotebookMetadata
 
 def insert_evaluation_run(folder_hash: str, notebook_data: dict) -> str:
     """Insert a new evaluation run and its notebook data."""
