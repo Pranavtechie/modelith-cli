@@ -177,3 +177,14 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# JS Stuff 
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+
+# Stuff added 
+kaggle_browser_data/
