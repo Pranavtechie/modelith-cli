@@ -14,7 +14,7 @@ Modelith is a open-source, CLI-based tool to quickly compare and make it easier 
 
 ## Getting Started
 
-Modelith relies on `uv`. If you haven't installed uv yet, please do by following ![Installing uv and Python section](#installing-uv-and-python).
+Modelith relies on `uv`. If you haven't installed uv yet, please do by following [Installing uv and Python section](#installing-uv-and-python).
 
 ```shell
 uv tool install modelith
