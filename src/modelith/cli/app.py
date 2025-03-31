@@ -1,6 +1,6 @@
 import typer
 from rich.console import Console
-from .commands import init, kaggle_dump, extract
+from modelith.cli.commands import init, kaggle_dump, extract
 
 app = typer.Typer(name="modolith", add_completion=False)
 console = Console()

@@ -1,6 +1,6 @@
 from typer.main import Typer
 import typer
-from ...kaggle_automation.kaggle_login import run as kaggle_run
+from modelith.kaggle_automation.kaggle_login import run as kaggle_run
 import os
 
 def add_commands(app: Typer):

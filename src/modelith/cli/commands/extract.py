@@ -5,11 +5,11 @@ import os
 import shutil
 import json
 from typing_extensions import LiteralString
-from ...core.sanity_check import sanity_check
-from ...core.folder_hash import generate_folder_hash
-from ...core.notebook_analyzer import NotebookAnalyzer
-from ...core.db_operations import insert_evaluation_run
-from ...core.ast_comparison import compare_asts_in_folder
+from modelith.core.sanity_check import sanity_check
+from modelith.core.folder_hash import generate_folder_hash
+from modelith.core.notebook_analyzer import NotebookAnalyzer
+from modelith.core.db_operations import insert_evaluation_run
+from modelith.core.ast_comparison import compare_asts_in_folder
 
 
 console = Console()
