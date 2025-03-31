@@ -1,12 +1,24 @@
-# modelith
+# Modelith
 
-👉\[\[\[**This is the initial readme for your
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv) template.** Fill it in and
-delete this message!
-Below are general setup instructions that you may remove or keep and adapt for your
-project.\]\]\]
+Modelith is a open-source, CLI-based tool to quickly compare and make it easier to evaluate any kind of coding assignment. Built for Professors, TAs, Teachers.
 
-* * *
+## Features
+
+-   Quickly draw a comparison of all the submissions in a folder with the help of ASTs. Currently only supports `.ipynb` files
+-   🚧 Easily compare and filter submissions using thresholds (in the Web Client)
+-   Identify plagiarized / copied submissions, through similarity Matrix
+-   Simple storage solution (in sqlite db) for all submissions
+-   🚧 Trend assessment for multiple assignments throughout the course / class.
+-   🚧 Class Management, so you can have evaluate and maintain record of multiple classes
+-   🚧 Support for Multiple Languages (C, C++, Java, R, etc..)
+
+## Getting Started
+
+Modelith relies on `uv`. If you haven't installed uv yet, please do by following ![Installing uv and Python section](#installing-uv-and-python).
+
+```shell
+uv tool install modelith
+```
 
 ## Installing uv and Python
 
@@ -36,13 +48,6 @@ Now you can use uv to install a current Python environment:
 uv python install 3.13 # Or pick another version.
 ```
 
-## Development Workflows
+## Usage (🚧 - will be updated)
 
-For development workflows, see [development.md](development.md).
-
-For instructions on publishing to PyPI, see [publishing.md](publishing.md).
-
-* * *
-
-*This project was built from
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+The CLI tool is very minimalistic by design and has very few commands. You can view all the commands by running `modelith -h`
