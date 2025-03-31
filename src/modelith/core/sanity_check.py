@@ -1,7 +1,7 @@
 import os
 import typer
 from rich.console import Console
-from modelith.utils.generate_database import generate_database
+from modelith.core.generate_database import generate_database
 
 def sanity_check():
     # check if modelith.db file exists. If it doesn't ask the user that we'll create one. with y/cancel options using typer cli

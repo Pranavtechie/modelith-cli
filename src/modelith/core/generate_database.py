@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, Column, String, Integer, Float, ForeignKey, DateTime, JSON, Uuid, Boolean, Enum
 from sqlalchemy.orm import declarative_base
-import uuid
 import os
 
 engine = create_engine('sqlite:///modelith.db')

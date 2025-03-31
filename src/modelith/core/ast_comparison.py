@@ -3,7 +3,6 @@ import json
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from itertools import combinations
 
 def are_asts_equivalent(node1, node2, ignore_variable_names=False):
     """
@@ -27,7 +26,7 @@ def are_asts_equivalent(node1, node2, ignore_variable_names=False):
                 if isinstance(node1.op, (ast.Add, ast.Mult)):
                     return (are_asts_equivalent(node1.left, node2.left, ignore_variable_names) and
                             are_asts_equivalent(node1.right, node2.right, ignore_variable_names)) or \
-                           (are_asts_equivalent(node1.left, node2.right, ignore_variable_names) and
+                            (are_asts_equivalent(node1.left, node2.right, ignore_variable_names) and
                             are_asts_equivalent(node1.right, node2.left, ignore_variable_names))
                 else:
                     return (are_asts_equivalent(node1.left, node2.left, ignore_variable_names) and
