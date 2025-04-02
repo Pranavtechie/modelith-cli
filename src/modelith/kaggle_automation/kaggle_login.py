@@ -10,12 +10,13 @@ from rich.console import Console
 
 console = Console()
 response_data = []
-notebook_data: list[Any] = []
+
 
 download_path: None | LiteralString = None
 user_data_dir = "./kaggle_browser_data"
 
 def extract_notebook_data() -> list[Any]:
+    notebook_data = []
     for item in response_data:
         if 'kernels' in item:
             for kernel in item['kernels']:
@@ -25,12 +26,14 @@ def extract_notebook_data() -> list[Any]:
                     "title": kernel["title"],
                     "status": False})
 
+    return notebook_data
+
 def filter_response(response):
     if response.url == "https://www.kaggle.com/api/i/kernels.KernelsService/ListKernels": 
         response_data.append(response.json())
 
 
-def scroll_nested_element(selector) -> None:
+def scroll_nested_element(selector, page) -> None:
     last_height = 0
     while True:
         # Scroll the specific element to its bottom
@@ -99,18 +102,20 @@ def navigate_and_fetch_notebooks(context, page):
         e = page.locator('div#site-content')
         e.focus()
 
-        scroll_nested_element(selector='div#site-content')
+        scroll_nested_element(selector='div#site-content', page=page)
         page.wait_for_timeout(1500)
 
-        extract_notebook_data()
+        return extract_notebook_data()
     
 
 
 def run(download_path):
     download_path = download_path
+    notebook_data = []
     status_file_path = os.path.join(download_path, 'competition_data.json')
     context = None
     page = None
+
     if os.path.exists(path=status_file_path):
         with open(status_file_path, "r") as infile:
             notebook_data = json.load(infile)
@@ -119,7 +124,7 @@ def run(download_path):
     else:
         print("Status file not found, fetching notebooks...")
         context, page = start_playwright_instance()
-        navigate_and_fetch_notebooks(context, page)
+        notebook_data = navigate_and_fetch_notebooks(context, page)
 
 
     print(f"Fetched {len(notebook_data)} Notebooks")
@@ -128,80 +133,84 @@ def run(download_path):
     failed_notebook_download = []
     continuously_failed_count = 0
 
+    pending_notebooks_urls = list(filter(lambda x: x['status'] != True, notebook_data))
+    completed_notebook_urls = list(filter(lambda x: x['status'] == True, notebook_data))
+
+    if len(pending_notebooks_urls) > 0:
         
-    with Progress(
-        SpinnerColumn(),
-        "{task.description}",
-        MofNCompleteColumn(),
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.1f}%",
-        TimeElapsedColumn(),
-        console=console,
-        transient=True
-    ) as progress:
-        download_task: TaskID = progress.add_task(description="[green]Downloading notebooks", total=len(notebook_data))
+        with Progress(
+            SpinnerColumn(),
+            "{task.description}",
+            MofNCompleteColumn(),
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.1f}%",
+            TimeElapsedColumn(),
+            console=console,
+            transient=True
+        ) as progress:
+            download_task: TaskID = progress.add_task(description="[green]Downloading notebooks", total=len(notebook_data))
 
-        pending_notebooks_urls = list(filter(lambda x: x['status'] != True, notebook_data))
-        completed_notebook_urls = list(filter(lambda x: x['status'] == True, notebook_data))
 
-        progress.update(task_id=download_task, advance=len(completed_notebook_urls))
-        successful_notebook_download_count = 0
 
-        for i in range(len(pending_notebooks_urls)):
-            notebook = pending_notebooks_urls[i]
-            kernel_id = notebook['kernel_id']
-            progress.console.print(f"Downloading - {notebook['script_url']}")
-            try:
-                # Use page.wait_for_download() to properly handle the download
-                with page.expect_download() as download_info:
-                    page.evaluate("""(url) => {
-                        const link = document.createElement("a");
-                        link.href = url;
-                        link.download = "";
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }""", f"https://www.kaggle.com/kernels/scriptcontent/{kernel_id}/download")
-                
+            progress.update(task_id=download_task, advance=len(completed_notebook_urls))
+            successful_notebook_download_count = 0
+            for i in range(len(pending_notebooks_urls)):
+                notebook = pending_notebooks_urls[i]
+                kernel_id = notebook['kernel_id']
+                progress.console.print(f"Downloading - {notebook['script_url']}")
+                try:
+                    # Use page.wait_for_download() to properly handle the download
+                    with page.expect_download() as download_info:
+                        page.evaluate("""(url) => {
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = "";
+                            document.body.appendChild(link);
+                            link.click()
+                            document.body.removeChild(link)
+                        }""", f"https://www.kaggle.com/kernels/scriptcontent/{kernel_id}/download")
+                    
                     download = download_info.value
                     download.save_as(os.path.join(download_path, download.suggested_filename))
                     progress.console.print(f"File - [dark_orange]{notebook['title']}[/dark_orange] saved\n")
 
-                for dict in notebook_data:
-                    if dict["kernel_id"] == notebook["kernel_id"]:
-                        dict["status"] = True
+                    for dict in notebook_data:
+                        if dict["kernel_id"] == notebook["kernel_id"]:
+                            dict["status"] = True
 
-                with open(file=status_file_path, mode="w") as outfile:
-                    json.dump(notebook_data, outfile)
+                    with open(file=status_file_path, mode="w") as outfile:
+                        json.dump(notebook_data, outfile)
 
-                successful_notebook_download_count += 1
-                continuously_failed_count = 0
-
-
-            except Exception as e:
-                print(e.args)
-                print(e.__cause__)
-                print(e.__class__)
-                progress.console.print(f"🚨 File - [dark_orange]{notebook['title']}[/dark_orange] failed to save\n")
-                failed_notebook_download.append(notebook)
-                continuously_failed_count += 1
-
-                if continuously_failed_count == 3:
-                    print("🚨🚨🚨 - Three Notebooks Failed Contiguously - Aborting!! 🚨🚨🚨")
-                    break
-
-            time.sleep(5)
-            progress.update(task_id=download_task, advance=1)
+                    successful_notebook_download_count += 1
+                    continuously_failed_count = 0
 
 
-        if len(failed_notebook_download) == 0:
-            print(f"All {len(pending_notebooks_urls)} Notebooks are downloaded\n\n")
-            os.remove(path=status_file_path)
-        else:
-            print(f"{successful_notebook_download_count}/{len(pending_notebooks_urls)} notebooks downloaded\n")
-            print("FAILED NOTEBOOKS DATA")
-            print(json.dumps(obj=failed_notebook_download, indent=2))
+                except Exception as e:
+                    print(e.args)
+                    print(e.__cause__)
+                    print(e.__class__)
+                    progress.console.print(f"🚨 File - [dark_orange]{notebook['title']}[/dark_orange] failed to save\n")
+                    failed_notebook_download.append(notebook)
+                    continuously_failed_count += 1
 
+                    if continuously_failed_count == 3:
+                        print("🚨🚨🚨 - Three Notebooks Failed Contiguously - Aborting!! 🚨🚨🚨")
+                        break
+
+                progress.update(task_id=download_task, advance=1)
+                time.sleep(5)
+
+
+            if len(failed_notebook_download) == 0:
+                print(f"All {len(pending_notebooks_urls)} Notebooks are downloaded\n\n")
+                os.remove(path=status_file_path)
+            else:
+                print(f"{successful_notebook_download_count}/{len(pending_notebooks_urls)} notebooks downloaded\n")
+                print("FAILED NOTEBOOKS DATA")
+                print(json.dumps(obj=failed_notebook_download, indent=2))
+    else:
+        print("All notebooks for this Competition have already been downloaded!")
+        print("Nothing to download!!")
 
     input("Press 'Enter' to terminate the browser...")
 

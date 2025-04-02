@@ -100,10 +100,11 @@ class NotebookAnalyzer:
         analytics["code_reusability_metric"] = duplicate_count
 
         # Code vs Markdown Ratio
-        analytics["code_vs_markdown_ratio"] = (
+        ratio = (
             len(self.code_cells) / len(self.markdown_cells)
             if self.markdown_cells else None
         )
+        analytics["code_vs_markdown_ratio"] = round(ratio, 2) if ratio is not None else None
 
         # Total lines in code and markdown cells
         analytics["total_lines_of_code"] = total_code_lines
@@ -180,11 +181,13 @@ class NotebookAnalyzer:
                     identifiers.append(len(node.id))
                 elif isinstance(node, (ast.FunctionDef, ast.ClassDef)):
                     identifiers.append(len(node.name))
-            analytics["mean_identifier_length"] = sum(identifiers) / len(identifiers) if identifiers else 0
+            mean_identifier_length = sum(identifiers) / len(identifiers) if identifiers else 0
+            analytics["mean_identifier_length"] = round(mean_identifier_length, 2)
             # Keyword Density
             keyword_count = sum(full_code.count(kw) for kw in keyword.kwlist)
             total_lines = len(full_code.splitlines())
-            analytics["keyword_density"] = keyword_count / total_lines if total_lines else 0
+            keyword_density = keyword_count / total_lines if total_lines else 0
+            analytics["keyword_density"] = round(keyword_density, 2)
 
             # Save AST to file
             notebook_name = os.path.splitext(os.path.basename(self.notebook_file))[0]

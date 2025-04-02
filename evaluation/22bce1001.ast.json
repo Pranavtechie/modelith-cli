@@ -1,0 +1,1145 @@
+{
+  "ast": {
+    "_type": "Module",
+    "body": [
+      {
+        "_type": "Import",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "numpy",
+            "asname": "np"
+          }
+        ]
+      },
+      {
+        "_type": "Import",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "pandas",
+            "asname": "pd"
+          }
+        ]
+      },
+      {
+        "_type": "Import",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "os",
+            "asname": null
+          }
+        ]
+      },
+      {
+        "_type": "For",
+        "target": {
+          "_type": "Tuple",
+          "elts": [
+            {
+              "_type": "Name",
+              "id": "dirname",
+              "ctx": {
+                "_type": "Store"
+              }
+            },
+            {
+              "_type": "Name",
+              "id": "_",
+              "ctx": {
+                "_type": "Store"
+              }
+            },
+            {
+              "_type": "Name",
+              "id": "filenames",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "ctx": {
+            "_type": "Store"
+          }
+        },
+        "iter": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "os",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "walk",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Constant",
+              "value": "/kaggle/input",
+              "kind": null
+            }
+          ],
+          "keywords": []
+        },
+        "body": [
+          {
+            "_type": "For",
+            "target": {
+              "_type": "Name",
+              "id": "filename",
+              "ctx": {
+                "_type": "Store"
+              }
+            },
+            "iter": {
+              "_type": "Name",
+              "id": "filenames",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "body": [
+              {
+                "_type": "Expr",
+                "value": {
+                  "_type": "Call",
+                  "func": {
+                    "_type": "Name",
+                    "id": "print",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "args": [
+                    {
+                      "_type": "Call",
+                      "func": {
+                        "_type": "Attribute",
+                        "value": {
+                          "_type": "Attribute",
+                          "value": {
+                            "_type": "Name",
+                            "id": "os",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          },
+                          "attr": "path",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "join",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "args": [
+                        {
+                          "_type": "Name",
+                          "id": "dirname",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        {
+                          "_type": "Name",
+                          "id": "filename",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        }
+                      ],
+                      "keywords": []
+                    }
+                  ],
+                  "keywords": []
+                }
+              }
+            ],
+            "orelse": [],
+            "type_comment": null
+          }
+        ],
+        "orelse": [],
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "train",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "pd",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "read_csv",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Constant",
+              "value": "/kaggle/input/wheet-variety-prediction-d-1-winter-24-25/wheet_train.csv",
+              "kind": null
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "test",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "pd",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "read_csv",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Constant",
+              "value": "/kaggle/input/wheet-variety-prediction-d-1-winter-24-25/wheet_test.csv",
+              "kind": null
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "ssub",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "pd",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "read_csv",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Constant",
+              "value": "/kaggle/input/wheet-variety-prediction-d-1-winter-24-25/sample_submission.csv",
+              "kind": null
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "ImportFrom",
+        "module": "sklearn.linear_model",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "LogisticRegression",
+            "asname": null
+          }
+        ],
+        "level": 0
+      },
+      {
+        "_type": "ImportFrom",
+        "module": "sklearn.preprocessing",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "StandardScaler",
+            "asname": null
+          }
+        ],
+        "level": 0
+      },
+      {
+        "_type": "ImportFrom",
+        "module": "sklearn.model_selection",
+        "names": [
+          {
+            "_type": "alias",
+            "name": "train_test_split",
+            "asname": null
+          }
+        ],
+        "level": 0
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "train",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "head",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": []
+        }
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "test",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "head",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": []
+        }
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "ssub",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "head",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": []
+        }
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "logm",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Name",
+            "id": "LogisticRegression",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": [
+            {
+              "_type": "keyword",
+              "arg": "multi_class",
+              "value": {
+                "_type": "Constant",
+                "value": "multinomial",
+                "kind": null
+              }
+            },
+            {
+              "_type": "keyword",
+              "arg": "solver",
+              "value": {
+                "_type": "Constant",
+                "value": "lbfgs",
+                "kind": null
+              }
+            }
+          ]
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "Xtr",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Subscript",
+          "value": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "train",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "loc",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "slice": {
+            "_type": "Tuple",
+            "elts": [
+              {
+                "_type": "Slice",
+                "lower": null,
+                "upper": null,
+                "step": null
+              },
+              {
+                "_type": "Slice",
+                "lower": null,
+                "upper": {
+                  "_type": "Constant",
+                  "value": "kernelGrooveLength.",
+                  "kind": null
+                },
+                "step": null
+              }
+            ],
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "ytr",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Subscript",
+          "value": {
+            "_type": "Name",
+            "id": "train",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "slice": {
+            "_type": "Constant",
+            "value": "Type",
+            "kind": null
+          },
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Tuple",
+            "elts": [
+              {
+                "_type": "Name",
+                "id": "Xtrain",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              {
+                "_type": "Name",
+                "id": "Xtest",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              {
+                "_type": "Name",
+                "id": "ytrain",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              {
+                "_type": "Name",
+                "id": "ytest",
+                "ctx": {
+                  "_type": "Store"
+                }
+              }
+            ],
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Name",
+            "id": "train_test_split",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "Xtr",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            {
+              "_type": "Name",
+              "id": "ytr",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": [
+            {
+              "_type": "keyword",
+              "arg": "test_size",
+              "value": {
+                "_type": "Constant",
+                "value": 0.3,
+                "kind": null
+              }
+            },
+            {
+              "_type": "keyword",
+              "arg": "random_state",
+              "value": {
+                "_type": "Constant",
+                "value": 42,
+                "kind": null
+              }
+            }
+          ]
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "scaler",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Name",
+            "id": "StandardScaler",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "Xtrscaled",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "scaler",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "fit_transform",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "Xtrain",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "Xtsscaled",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "scaler",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "transform",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "Xtest",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "logm",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "fit",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "Xtrscaled",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            {
+              "_type": "Name",
+              "id": "ytrain",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        }
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "ypred",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "logm",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "predict",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "Xtsscaled",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Name",
+          "id": "ypred",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "test",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "scaler",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "transform",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "test",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "res",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "logm",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "predict",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "test",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Name",
+          "id": "res",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Attribute",
+          "value": {
+            "_type": "Name",
+            "id": "logm",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "attr": "coef_",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Attribute",
+          "value": {
+            "_type": "Name",
+            "id": "logm",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "attr": "intercept_",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "dfres",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "pd",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "DataFrame",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Name",
+              "id": "res",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Name",
+          "id": "dfres",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      },
+      {
+        "_type": "Assign",
+        "targets": [
+          {
+            "_type": "Name",
+            "id": "submission",
+            "ctx": {
+              "_type": "Store"
+            }
+          }
+        ],
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "pd",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "DataFrame",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Dict",
+              "keys": [
+                {
+                  "_type": "Constant",
+                  "value": "ID",
+                  "kind": null
+                },
+                {
+                  "_type": "Constant",
+                  "value": "Type",
+                  "kind": null
+                }
+              ],
+              "values": [
+                {
+                  "_type": "Call",
+                  "func": {
+                    "_type": "Name",
+                    "id": "range",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "args": [
+                    {
+                      "_type": "Constant",
+                      "value": 1,
+                      "kind": null
+                    },
+                    {
+                      "_type": "BinOp",
+                      "left": {
+                        "_type": "Call",
+                        "func": {
+                          "_type": "Name",
+                          "id": "len",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "args": [
+                          {
+                            "_type": "Name",
+                            "id": "res",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          }
+                        ],
+                        "keywords": []
+                      },
+                      "op": {
+                        "_type": "Add"
+                      },
+                      "right": {
+                        "_type": "Constant",
+                        "value": 1,
+                        "kind": null
+                      }
+                    }
+                  ],
+                  "keywords": []
+                },
+                {
+                  "_type": "Name",
+                  "id": "res",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                }
+              ]
+            }
+          ],
+          "keywords": []
+        },
+        "type_comment": null
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "submission",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "head",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [],
+          "keywords": []
+        }
+      },
+      {
+        "_type": "Expr",
+        "value": {
+          "_type": "Call",
+          "func": {
+            "_type": "Attribute",
+            "value": {
+              "_type": "Name",
+              "id": "submission",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "attr": "to_csv",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "args": [
+            {
+              "_type": "Constant",
+              "value": "submission.csv",
+              "kind": null
+            }
+          ],
+          "keywords": [
+            {
+              "_type": "keyword",
+              "arg": "index",
+              "value": {
+                "_type": "Constant",
+                "value": false,
+                "kind": null
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "type_ignores": []
+  }
+}

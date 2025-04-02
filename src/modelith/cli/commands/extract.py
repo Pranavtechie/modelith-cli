@@ -1,3 +1,4 @@
+from uuid import UUID
 from typer.main import Typer
 import typer
 from rich.console import Console
@@ -5,13 +6,14 @@ import os
 import shutil
 import json
 from typing_extensions import LiteralString
-from modelith.core.sanity_check import sanity_check
 from modelith.core.folder_hash import generate_folder_hash
 from modelith.core.notebook_analyzer import NotebookAnalyzer
-from modelith.core.db_operations import insert_evaluation_run
+from modelith.core.db.db_operations import insert_evaluation_run
 from modelith.core.ast_comparison import compare_asts_in_folder
-
-
+from rich.table import Table
+from modelith.core.utils import select_class
+from modelith.core.db.classes import fetch_class_id_from_class_name
+from modelith.core.sanitize_filenames import sanitize_filenames
 console = Console()
 
 def add_commands(app: Typer): 
@@ -19,10 +21,11 @@ def add_commands(app: Typer):
     @app.command()
     def extract(folder: str = typer.Option(".", "--folder", "-f", help="Folder to scan for .ipynb files")):
         """Evaluate all .ipynb files in the specified folder and save results."""
-        # STEP 0: Sanity Check - Verification if Existing Resources are in-place
-        if not sanity_check():
-            console.print(f"[red]Operation cancelled[/red]")
-
+        # Use the common class selection logic
+        class_name = select_class()
+        class_id: UUID = fetch_class_id_from_class_name(class_name=class_name)
+        print('class id from extract')
+        print(class_id)
         
         # STEP 1: Validate input folder
         folder = os.path.abspath(folder)
@@ -30,13 +33,46 @@ def add_commands(app: Typer):
             console.print(f"[red]Error: '{folder}' is not a valid directory.[/red]")
             raise typer.Exit(1)
         
+
+        # STEP 1.1: Count valid files for the metadata extraction
+        console.print("Checking files in folder...")
+        all_files = os.listdir(folder)
+        ipynb_files = [f for f in all_files if f.endswith('.ipynb')]
+        other_files = [f for f in all_files if not f.endswith('.ipynb')]
+
+        # Create a rich table to display file counts
+        file_table = Table(title=f"Files in {folder}")
+        file_table.add_column("File Type", style="cyan")
+        file_table.add_column("Count", style="green")
+        file_table.add_column("Action", style="yellow")
+
+        file_table.add_row(
+            "Jupyter Notebooks (.ipynb)", 
+            str(len(ipynb_files)), 
+            "Will be processed"
+        )
+        file_table.add_row(
+            "Other Files", 
+            str(len(other_files)), 
+            "Will be ignored"
+        )
+
+        console.print(file_table)
+        if len(ipynb_files) == 0:
+            console.print("[bold red]Warning: No Jupyter notebooks found in the specified folder![/bold red]")
+            if not typer.confirm("Continue anyway?", default=False):
+                raise typer.Exit(0)
+
+        # STEP 1.2: Clean File Names
+        console.print("Sanitizing notebook filenames to standard format...")
+        sanitize_filenames(folder)
+        console.print("File sanitization complete.")
+        
         # STEP 2: Generate hash for the folder
         folder_hash = generate_folder_hash(folder)
-        if not folder_hash:
-            console.print("No notebook files found in the specified folder.")
-            return
 
-        # STEP 3: Get Notebook Files and create evaluation dictionary (dumped to evaluation.json)
+
+        # STEP 3: Get Notebook Files into a list and create evaluation dictionary (dumped to evaluation.json)
         nb_files: list[str] = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith('.ipynb')]
         evaluations = {
             "folder_hash": folder_hash,
@@ -80,7 +116,7 @@ def add_commands(app: Typer):
 
         # STEP 6: Store the Metrics Generated in the sqlite database
         try:
-            run_id = insert_evaluation_run(folder_hash, notebook_data=evaluations["notebooks"])
+            run_id = insert_evaluation_run(folder_hash, notebook_data=evaluations["notebooks"], class_id=class_id)
             console.print(f"[green]Successfully stored evaluation results in database. Run ID: {run_id}[/green]")
         except Exception as e:
             console.print(f"[red]Failed to store results in database: {e}[/red]")

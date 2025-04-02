@@ -13,7 +13,7 @@ authors = [
 ]
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.12"
 dynamic = ["version"]
 
 # https://pypi.org/classifiers/
@@ -28,8 +28,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
     # Include this to avoid accidentally publishing to PyPI:
     # "Private :: Do Not Upload",
@@ -41,7 +39,11 @@ classifiers = [
 dependencies = [
     "jupyter-notebook-parser>=0.1.4",
     "matplotlib>=3.10.1",
+    "pandas>=2.2.3",
+    "platformdirs>=4.3.7",
     "playwright>=1.51.0",
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.3",
     "rich>=13.9.4",
     "sqlalchemy>=2.0.40",
     "typer>=0.15.2",
@@ -87,7 +89,7 @@ bump = "true"
 
 [tool.hatch.build.targets.wheel]
 # The source location for the package.
-packages = ["src/modelith"]
+packages = ["src/modelith", "frontend"]
 
 
 # ---- Settings ----
