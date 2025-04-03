@@ -9,7 +9,7 @@ Modelith is a open-source, CLI-based tool to quickly compare and make it easier 
 -   Identify plagiarized / copied submissions, through similarity Matrix
 -   Simple storage solution (in sqlite db) for all submissions
 -   🚧 Trend assessment for multiple assignments throughout the course / class.
--   🚧 Class Management, so you can have evaluate and maintain record of multiple classes
+-   Class Management, so you can have evaluate and maintain record of multiple classes
 -   🚧 Support for Multiple Languages (C, C++, Java, R, etc..)
 
 ## Getting Started
