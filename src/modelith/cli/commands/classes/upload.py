@@ -3,7 +3,7 @@ from rich.console import Console
 from rich.panel import Panel
 import typer
 from modelith.core.utils import select_class
-from modelith.core.db.classes import upload_class_data
+from modelith.core.db.db_classes import upload_class_data
 
 console = Console()
 

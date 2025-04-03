@@ -12,7 +12,7 @@ from modelith.core.db.db_operations import insert_evaluation_run
 from modelith.core.ast_comparison import compare_asts_in_folder
 from rich.table import Table
 from modelith.core.utils import select_class
-from modelith.core.db.classes import fetch_class_id_from_class_name
+from modelith.core.db.db_classes import fetch_class_id_from_class_name
 from modelith.core.sanitize_filenames import sanitize_filenames
 console = Console()
 

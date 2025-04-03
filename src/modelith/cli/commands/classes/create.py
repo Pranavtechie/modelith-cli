@@ -1,5 +1,5 @@
 from typer import Typer
-from modelith.core.db.classes import create_class
+from modelith.core.db.db_classes import create_class
 from rich.console import Console
 
 console = Console()

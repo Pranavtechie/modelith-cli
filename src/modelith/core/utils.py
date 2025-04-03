@@ -1,7 +1,7 @@
 
 from rich.console import Console
 from rich.prompt import Prompt
-from modelith.core.db.classes import fetch_classes, create_class
+from modelith.core.db.db_classes import fetch_classes, create_class
 
 console = Console()
 
