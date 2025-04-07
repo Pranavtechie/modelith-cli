@@ -37,6 +37,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Current Data
 d1-winter-2024-25/
 students.csv
+kaggle_browser_data/
+downloads/
 
 # DB
 *.sqlite

@@ -39,6 +39,8 @@
 		"drizzle-kit": "^0.30.6",
 		"drizzle-orm": "^0.41.0",
 		"lucide-react": "^0.476.0",
+		"ora": "^8.2.0",
+		"playwright": "^1.51.1",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"tailwind-merge": "^3.2.0",
