@@ -31,7 +31,8 @@
 			"@/*": ["src/*"],
 			"@frontend/*": ["src/frontend/src/*"],
 			"@db/*": ["src/db/*"],
-			"@utils/*": ["src/utils/*"]
+			"@utils/*": ["src/utils/*"],
+			"@commands/*": ["src/commands/*"]
 		}
 	}
 }

@@ -1,0 +1,1 @@
+- If I remove `loadEnv()` method from the `src/db/client.ts` file the environment variable `DB_FILE_NAME` doesn't seem to populate throughout the project. Even after I've specifically added the `await loadEnv()` statement as the first part of the `index.ts` file before the commander.js initiation.

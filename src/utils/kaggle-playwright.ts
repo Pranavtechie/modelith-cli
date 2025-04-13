@@ -148,7 +148,7 @@ async function downloadNotebook(page: Page, notebook: NotebookData, download_pat
     }
 }
 
-async function run(download_path: string): Promise<void> {
+export async function run(download_path: string): Promise<void> {
     const statusFilePath = `${download_path}/competition_data.json`;
     let notebookData: NotebookData[] = [];
     let context: BrowserContext;
@@ -222,8 +222,4 @@ async function run(download_path: string): Promise<void> {
     await context.close();
 }
 
-// Execute
-run("./downloads").catch((error) => {
-    console.error(chalk.red("Error:"), error);
-    process.exit(1);
-});
+

@@ -39,6 +39,7 @@ d1-winter-2024-25/
 students.csv
 kaggle_browser_data/
 downloads/
+modelith-analysis
 
 # DB
 *.sqlite

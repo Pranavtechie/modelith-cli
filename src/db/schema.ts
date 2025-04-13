@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, blob, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, blob, primaryKey, unique } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { randomUUIDv7 } from "bun";
 
@@ -56,7 +56,7 @@ export const NotebookMetadata = sqliteTable("NotebookMetadata", {
 });
 
 export const Similarity = sqliteTable("Similarity", {
-    runId: text("runId").references(() => Run.runId).$defaultFn(() => randomUUIDv7()),
+    runId: text("runId").references(() => Run.runId),
     fileA: text("fileA").notNull(),
     fileB: text("fileB").notNull(),
     similarityScore: real("similarityScore").notNull(),
@@ -72,10 +72,12 @@ export const Cohort = sqliteTable("Cohort", {
 
 export const Student = sqliteTable("Student", {
     studentId: text("studentId").primaryKey().$defaultFn(() => randomUUIDv7()),
-    cohortId: text("cohortId").references(() => Cohort.cohortId),
+    cohortId: text("cohortId").references(() => Cohort.cohortId).notNull(), // Added .notNull()
     name: text("name"),
     regNo: text("regNo"),
-});
+}, (table) => ({ // Added unique constraint
+    uniqueRegNoCohort: unique("unique_regNo_cohort").on(table.regNo, table.cohortId),
+}));
 
 // Relations
 export const RunRelations = relations(Run, ({ one, many }) => ({
