@@ -9,7 +9,7 @@ interface AstNode {
     children?: AstNode[];
 }
 
-// --- Helper Functions (Copied or adapted from ast-comparison.ts) ---
+
 
 /**
  * Counts the total number of nodes in an AST subtree.
