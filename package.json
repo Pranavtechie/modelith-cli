@@ -5,10 +5,10 @@
 	"version": "0.1.1",
 	"license": "MIT",
 	"bin": {
-		"modelith": "./cli-dist/modelith"
+		"modelith": "cli-dist/modelith"
 	},
 	"scripts": {
-		"postinstall": "bun run build:cli && bun link && modelith init",
+		"postinstall": "bun run build:cli && bun link  && modelith init",
 		"start": "vite --port 3000",
 		"build:frontend": "bun x --bun vite build",
 		"build:cli": "bun build src/index.ts --compile --outfile cli-dist/modelith --minify --sourcemap --external playwright --external playwright-core",
@@ -17,6 +17,17 @@
 		"generate": "bun x --bun drizzle-kit generate"
 	},
 	"packageManager": "bun@1.2.9",
+	"files": [
+		"drizzle",
+		"src",
+		"bun.lock",
+		"package.json",
+		"components.json",
+		"drizzle.config.ts",
+		"LICENSE",
+		"tsconfig.json",
+		"vite.config.ts"
+	],
 	"devDependencies": {
 		"@libsql/client": "^0.15.3",
 		"@testing-library/dom": "^10.4.0",
