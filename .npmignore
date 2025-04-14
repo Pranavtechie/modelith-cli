@@ -1,3 +1,12 @@
-src/
-Development.md
-Things-To-Fix.md
+*
+cli-dist/*
+
+# Stuff to Include 
+!src/
+!bun.lock
+!components.json
+!drizzle.config.ts
+!LICENSE
+!package.json
+!tsconfig.json
+!vite.config.ts
