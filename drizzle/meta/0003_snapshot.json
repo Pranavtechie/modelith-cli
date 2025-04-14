@@ -1,0 +1,573 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "2633b862-9f5d-464b-a699-ce5e12668a6f",
+  "prevId": "49989458-8ee2-4b23-b622-107d6f3a6619",
+  "tables": {
+    "Cohort": {
+      "name": "Cohort",
+      "columns": {
+        "cohortId": {
+          "name": "cohortId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "className": {
+          "name": "className",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "Cohort_className_unique": {
+          "name": "Cohort_className_unique",
+          "columns": [
+            "className"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "NotebookMetadata": {
+      "name": "NotebookMetadata",
+      "columns": {
+        "notebookId": {
+          "name": "notebookId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runId": {
+          "name": "runId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filename": {
+          "name": "filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "totalCells": {
+          "name": "totalCells",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "codeCells": {
+          "name": "codeCells",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "markdownCells": {
+          "name": "markdownCells",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cellExecutionCount": {
+          "name": "cellExecutionCount",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "magicCommandUsage": {
+          "name": "magicCommandUsage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "outputCellsCount": {
+          "name": "outputCellsCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "errorCellCount": {
+          "name": "errorCellCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "codeReusabilityMetric": {
+          "name": "codeReusabilityMetric",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "codeVsMarkdownRatio": {
+          "name": "codeVsMarkdownRatio",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "totalLinesOfCode": {
+          "name": "totalLinesOfCode",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "totalLinesInMarkdown": {
+          "name": "totalLinesInMarkdown",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "uniqueImports": {
+          "name": "uniqueImports",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "totalExecutionTime": {
+          "name": "totalExecutionTime",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "executionTimeDeltaPerCell": {
+          "name": "executionTimeDeltaPerCell",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "linkCount": {
+          "name": "linkCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "widgetUsage": {
+          "name": "widgetUsage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "executionOrderDisorder": {
+          "name": "executionOrderDisorder",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "astNodeCount": {
+          "name": "astNodeCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "astDepth": {
+          "name": "astDepth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "functionDefinitionsCount": {
+          "name": "functionDefinitionsCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "classDefinitionsCount": {
+          "name": "classDefinitionsCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numberOfFunctionCalls": {
+          "name": "numberOfFunctionCalls",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numberOfLoopConstructs": {
+          "name": "numberOfLoopConstructs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numberOfConditionalStatements": {
+          "name": "numberOfConditionalStatements",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numberOfVariableAssignments": {
+          "name": "numberOfVariableAssignments",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "estimatedCyclomaticComplexity": {
+          "name": "estimatedCyclomaticComplexity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "exceptionHandlingBlocksCount": {
+          "name": "exceptionHandlingBlocksCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "recursionDetectionStatus": {
+          "name": "recursionDetectionStatus",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "comprehensionCount": {
+          "name": "comprehensionCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "binaryOperationCount": {
+          "name": "binaryOperationCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "meanIdentifierLength": {
+          "name": "meanIdentifierLength",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "keywordDensity": {
+          "name": "keywordDensity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "metadataJson": {
+          "name": "metadataJson",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ipynbOrigin": {
+          "name": "ipynbOrigin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "studentId": {
+          "name": "studentId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "NotebookMetadata_runId_Run_runId_fk": {
+          "name": "NotebookMetadata_runId_Run_runId_fk",
+          "tableFrom": "NotebookMetadata",
+          "tableTo": "Run",
+          "columnsFrom": [
+            "runId"
+          ],
+          "columnsTo": [
+            "runId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "NotebookMetadata_studentId_Student_studentId_fk": {
+          "name": "NotebookMetadata_studentId_Student_studentId_fk",
+          "tableFrom": "NotebookMetadata",
+          "tableTo": "Student",
+          "columnsFrom": [
+            "studentId"
+          ],
+          "columnsTo": [
+            "studentId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Run": {
+      "name": "Run",
+      "columns": {
+        "runId": {
+          "name": "runId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runHash": {
+          "name": "runHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "notebookCount": {
+          "name": "notebookCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cohortId": {
+          "name": "cohortId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Run_cohortId_Cohort_cohortId_fk": {
+          "name": "Run_cohortId_Cohort_cohortId_fk",
+          "tableFrom": "Run",
+          "tableTo": "Cohort",
+          "columnsFrom": [
+            "cohortId"
+          ],
+          "columnsTo": [
+            "cohortId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Similarity": {
+      "name": "Similarity",
+      "columns": {
+        "runId": {
+          "name": "runId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "studentA": {
+          "name": "studentA",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "studentB": {
+          "name": "studentB",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "similarityScore": {
+          "name": "similarityScore",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "treeEditDistance": {
+          "name": "treeEditDistance",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Similarity_runId_Run_runId_fk": {
+          "name": "Similarity_runId_Run_runId_fk",
+          "tableFrom": "Similarity",
+          "tableTo": "Run",
+          "columnsFrom": [
+            "runId"
+          ],
+          "columnsTo": [
+            "runId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "Similarity_studentA_Student_studentId_fk": {
+          "name": "Similarity_studentA_Student_studentId_fk",
+          "tableFrom": "Similarity",
+          "tableTo": "Student",
+          "columnsFrom": [
+            "studentA"
+          ],
+          "columnsTo": [
+            "studentId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "Similarity_studentB_Student_studentId_fk": {
+          "name": "Similarity_studentB_Student_studentId_fk",
+          "tableFrom": "Similarity",
+          "tableTo": "Student",
+          "columnsFrom": [
+            "studentB"
+          ],
+          "columnsTo": [
+            "studentId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Similarity_studentA_studentB_pk": {
+          "columns": [
+            "studentA",
+            "studentB"
+          ],
+          "name": "Similarity_studentA_studentB_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Student": {
+      "name": "Student",
+      "columns": {
+        "studentId": {
+          "name": "studentId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cohortId": {
+          "name": "cohortId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "regNo": {
+          "name": "regNo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "unique_regNo_cohort": {
+          "name": "unique_regNo_cohort",
+          "columns": [
+            "regNo",
+            "cohortId"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Student_cohortId_Cohort_cohortId_fk": {
+          "name": "Student_cohortId_Cohort_cohortId_fk",
+          "tableFrom": "Student",
+          "tableTo": "Cohort",
+          "columnsFrom": [
+            "cohortId"
+          ],
+          "columnsTo": [
+            "cohortId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

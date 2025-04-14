@@ -5,17 +5,23 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import path from 'path';
 
 export default defineConfig({
+    server: {
+        open: true,
+    },
+    preview: {
+        open: true,
+    },
     plugins: [
         TanStackRouterVite({ autoCodeSplitting: true }),
         react(),
         tailwindcss(),
     ],
-    root: 'src/frontend', // Source folder for frontend
+    root: 'src/frontend/', // Source folder for frontend
     build: {
         outDir: '../../dist', // Output to root-level dist/
         emptyOutDir: true,
         rollupOptions: {
-            input: path.resolve(__dirname, 'src/frontend/main.tsx'),
+            input: path.resolve(__dirname, 'src/frontend/index.html')
         },
     },
     resolve: {

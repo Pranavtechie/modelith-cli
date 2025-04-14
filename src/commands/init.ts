@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
 import { chromium } from 'playwright';
+import { readFileSync } from 'fs'; // Import fs to read package.json
 
 
 function verifyDatabaseSchema() {
@@ -41,6 +42,25 @@ async function checkAndSetupPlaywright() {
     }
 }
 
+async function buildFrontend() {
+    const spinner = ora('Building frontend with Vite...').start(); // Start spinner
+    try {
+        const buildProcess = Bun.spawn(['bun', 'run', 'build'], {
+            stdout: 'pipe', // Pipe output to handle it
+            stderr: 'pipe'
+        });
+        const exitCode = await buildProcess.exited;
+        if (exitCode === 0) {
+            spinner.succeed('Frontend built successfully.'); // Succeed spinner
+        } else {
+            const stderr = await new Response(buildProcess.stderr).text();
+            spinner.fail(`Frontend build failed: ${stderr}`); // Fail spinner
+        }
+    } catch (error) {
+        spinner.fail(`Unexpected error during frontend build: ${String(error)}`); // Fail spinner
+    }
+}
+
 function asciiArt() {
     console.log(`
 
@@ -54,12 +74,47 @@ function asciiArt() {
 `)
 }
 
+async function ensureBunVersion() {
+    const spinner = ora('Ensuring Bun version matches package.json...').start(); // Start spinner
+    try {
+        const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8')); // Read package.json
+        const requiredVersion = packageJson.packageManager.split('@')[1]; // Extract version from packageManager field
+
+        const versionProcess = Bun.spawn(['bun', '--version'], {
+            stdout: 'pipe',
+            stderr: 'pipe'
+        });
+        const versionOutput = await new Response(versionProcess.stdout).text();
+        const currentVersion = versionOutput.trim();
+
+        if (currentVersion === requiredVersion) {
+            spinner.succeed(`Bun is already at the required version: ${requiredVersion}`); // Succeed spinner
+        } else {
+            spinner.warn(`Current Bun version (${currentVersion}) does not match required version (${requiredVersion}). Upgrading...`);
+            const upgradeProcess = Bun.spawn(['bun', 'install', `--version=${requiredVersion}`], {
+                stdout: 'pipe',
+                stderr: 'pipe'
+            });
+            const exitCode = await upgradeProcess.exited;
+            if (exitCode === 0) {
+                spinner.succeed(`Bun upgraded to version ${requiredVersion} successfully.`); // Succeed spinner
+            } else {
+                const stderr = await new Response(upgradeProcess.stderr).text();
+                spinner.fail(`Failed to upgrade Bun to version ${requiredVersion}: ${stderr}`); // Fail spinner
+            }
+        }
+    } catch (error) {
+        spinner.fail(`Unexpected error while ensuring Bun version: ${String(error)}`); // Fail spinner
+    }
+}
 
 export const init = new Command()
     .name("init")
     .description("Initialize your project and install dependencies")
     .action(async () => {
         asciiArt();
+
+        await ensureBunVersion(); // Ensure Bun version matches package.json
 
         const configSpinner = ora('Verifying config file...').start(); // Start config spinner
         let configStatus = await verifyConfigFile();
@@ -74,4 +129,5 @@ export const init = new Command()
 
         await checkAndSetupPlaywright();
 
+        await buildFrontend();
     });

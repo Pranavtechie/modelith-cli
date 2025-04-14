@@ -4,7 +4,7 @@ import Parser from 'tree-sitter';
 import Python from 'tree-sitter-python';
 import { mkdir } from 'node:fs/promises';
 import { join, basename } from 'path';
-
+import { type NotebookMetricsSubset } from '@utils/types';
 interface Cell {
     cell_type: 'code' | 'markdown';
     source: string[];
@@ -306,7 +306,7 @@ export class NotebookAnalyzer {
         this.metrics['ipynbOrigin'] = null; // Placeholder
     }
 
-    public async getMetrics(): Promise<Record<string, any>> {
+    public async getMetrics(): Promise<NotebookMetricsSubset> { // Updated return type
         // Ensure async operations complete before returning
         // Use Promise.allSettled to avoid failure if one promise rejects
         const results = await Promise.allSettled([

@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, real, blob, primaryKey, unique } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { randomUUIDv7 } from "bun";
+import { timestamp } from "drizzle-orm/gel-core";
 
 // Enums (SQLite doesn't support native enums, so we use text with type constraints)
 const ipynbOriginEnum = ["google-colab", "kaggle", "jupyter"] as const;
@@ -68,6 +69,7 @@ export const Similarity = sqliteTable("Similarity", {
 export const Cohort = sqliteTable("Cohort", {
     cohortId: text("cohortId").primaryKey().$defaultFn(() => randomUUIDv7()),
     className: text("className").unique(),
+    timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
 });
 
 export const Student = sqliteTable("Student", {

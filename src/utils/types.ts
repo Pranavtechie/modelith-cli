@@ -31,7 +31,7 @@ export interface SanitizationResult {
     /**
      * Valid ipynb files mapping from original filenames to their sanitized names
      */
-    validIpynbFiles: { [originalName: string]: string };
+    validFiles: { [originalName: string]: string };
 
     /**
      * List of invalid files with detailed information about why they're invalid
@@ -43,3 +43,49 @@ export interface SanitizationResult {
      */
     fileExtension: string;
 }
+
+/**
+ * Defines the structure for Notebook Metadata based on the database schema.
+ */
+export interface NotebookMetadataObject {
+    notebookId: string;
+    runId: string | null;
+    filename: string;
+    totalCells: number | null;
+    codeCells: number | null;
+    markdownCells: number | null;
+    cellExecutionCount: Record<string, any> | null; // JSON blob
+    magicCommandUsage: number | null;
+    outputCellsCount: number | null;
+    errorCellCount: number | null;
+    codeReusabilityMetric: number | null;
+    codeVsMarkdownRatio: number | null;
+    totalLinesOfCode: number | null;
+    totalLinesInMarkdown: number | null;
+    uniqueImports: number | null;
+    totalExecutionTime: number | null;
+    executionTimeDeltaPerCell: Record<string, any> | null; // JSON blob
+    linkCount: number | null;
+    widgetUsage: number | null;
+    executionOrderDisorder: boolean | null;
+    astNodeCount: number | null;
+    astDepth: number | null;
+    functionDefinitionsCount: number | null;
+    classDefinitionsCount: number | null;
+    numberOfFunctionCalls: number | null;
+    numberOfLoopConstructs: number | null;
+    numberOfConditionalStatements: number | null;
+    numberOfVariableAssignments: number | null;
+    estimatedCyclomaticComplexity: number | null;
+    exceptionHandlingBlocksCount: number | null;
+    recursionDetectionStatus: boolean | null;
+    comprehensionCount: number | null;
+    binaryOperationCount: number | null;
+    meanIdentifierLength: number | null;
+    keywordDensity: number | null;
+    metadataJson: Record<string, any> | null; // JSON blob
+    ipynbOrigin: "google-colab" | "kaggle" | "jupyter" | null;
+    studentId: string | null;
+}
+
+export interface NotebookMetricsSubset extends Omit<NotebookMetadataObject, 'notebookId' | 'runId' | 'studentId'> { }

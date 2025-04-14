@@ -35,9 +35,9 @@ export const uploadData = new Command() // Renamed export for clarity
             }
 
             const fileContent = fs.readFileSync(filename, 'utf-8');
-            spinner.succeed(`Read data from ${filename}.`);
 
-            spinner.start("Parsing CSV data...");
+
+
             let records: any[];
             try {
                 records = parse(fileContent, {
@@ -46,7 +46,6 @@ export const uploadData = new Command() // Renamed export for clarity
                     trim: true, // Trim whitespace from values
                 });
             } catch (parseError: any) {
-                spinner.fail(`Error parsing CSV: ${parseError.message}`);
                 return;
             }
 
@@ -65,9 +64,9 @@ export const uploadData = new Command() // Renamed export for clarity
                 spinner.fail(`Error: CSV file is missing required columns: ${missingHeaders.join(', ')}. Required columns are 'regno' and 'name'.`);
                 return;
             }
-            spinner.succeed("Parsed CSV data.");
 
-            spinner.start("Preparing student data for upload...");
+
+
             const studentsToInsert = records.map(record => {
                 // Find the correct keys case-insensitively
                 const regNoKey = Object.keys(record).find(k => k.toLowerCase() === 'regno');
@@ -94,9 +93,7 @@ export const uploadData = new Command() // Renamed export for clarity
                 return;
             }
 
-            spinner.succeed("Prepared student data.");
 
-            spinner.start(`Uploading ${studentsToInsert.length} students to the database...`);
 
             try {
                 // Use insert with onConflictDoNothing to handle potential duplicates

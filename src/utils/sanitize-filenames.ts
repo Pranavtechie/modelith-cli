@@ -44,7 +44,7 @@ export async function analyzeFilenames(directory: string = ''): Promise<Sanitiza
         console.error(`Error: Directory "${chalk.blue.bold(currentDirectory)}" does not exist or is inaccessible.`);
         return {
             totalFilesInDirectory: 0,
-            validIpynbFiles: {},
+            validFiles: {},
             invalidFiles: [],
             fileExtension: fileExtension
         };
@@ -60,7 +60,7 @@ export async function analyzeFilenames(directory: string = ''): Promise<Sanitiza
         console.error(`Error reading directory: ${String(error)}`);
         return {
             totalFilesInDirectory: 0,
-            validIpynbFiles: {},
+            validFiles: {},
             invalidFiles: [],
             fileExtension: fileExtension
         };
@@ -205,7 +205,7 @@ export async function analyzeFilenames(directory: string = ''): Promise<Sanitiza
     }    // Prepare the result with our updated structure
     const result: SanitizationResult = {
         totalFilesInDirectory: targetFiles.length,
-        validIpynbFiles: validIpynbFiles,
+        validFiles: validIpynbFiles,
         invalidFiles: invalidFilesList,
         fileExtension: fileExtension
     };

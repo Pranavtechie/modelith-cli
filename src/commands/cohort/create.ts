@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import ora from 'ora';
-import { db } from "../../db/client";
-import { Cohort } from "../../db/schema";
+import { db } from "@db/client";
+import { Cohort } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export const create = new Command()
@@ -19,9 +19,9 @@ export const create = new Command()
                 return;
             }
 
-            // Insert using className
             await db.insert(Cohort).values({
                 className: className,
+                timestamp: new Date()
             });
 
             spinner.succeed(`Cohort with class name "${className}" created successfully.`);
@@ -32,7 +32,6 @@ export const create = new Command()
             } else {
                 console.error(`  An unknown error occurred.`);
             }
-            // Optionally, re-throw the error or handle it further
-            // process.exit(1); // Exit if critical
+
         }
     });
