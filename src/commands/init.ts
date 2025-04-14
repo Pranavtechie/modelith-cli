@@ -45,7 +45,7 @@ async function checkAndSetupPlaywright() {
 async function buildFrontend() {
     const spinner = ora('Building frontend with Vite...').start(); // Start spinner
     try {
-        const buildProcess = Bun.spawn(['bun', 'run', 'build'], {
+        const buildProcess = Bun.spawn(['bun', 'run', 'build:frontend'], {
             stdout: 'pipe', // Pipe output to handle it
             stderr: 'pipe'
         });

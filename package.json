@@ -4,9 +4,14 @@
 	"type": "module",
 	"version": "0.1.1",
 	"license": "MIT",
+	"bin": {
+		"modelith": "./cli-dist/modelith"
+	},
 	"scripts": {
+		"postinstall": "bun run build:cli && bun link && modelith init",
 		"start": "vite --port 3000",
-		"build": "bun x --bun vite build",
+		"build:frontend": "bun x --bun vite build",
+		"build:cli": "bun build src/index.ts --compile --outfile cli-dist/modelith --minify --sourcemap --external playwright --external playwright-core",
 		"dev": "bun run src/index.ts",
 		"preview": "bun x --bun vite preview",
 		"generate": "bun x --bun drizzle-kit generate"
