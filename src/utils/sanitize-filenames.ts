@@ -1,26 +1,15 @@
-import { readdir, access } from 'node:fs/promises';
+import { readdir, access, stat } from 'node:fs/promises';
 import path from 'path';
 import process from 'process';
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { type SanitizationResult, InvalidFileReason, type InvalidFileInfo } from '@utils/types';
+
 
 /**
- * Defines the structure for the sanitization result.
+ * Checks if a filename *exactly* matches the valid registration number pattern: 2 digits, 3 letters, 4 digits.
  */
-export interface SanitizationResult {
-    fileMap: { [originalName: string]: string };
-    metadata: {
-        totalFiles: number;
-        validFiles: number;
-        invalidFilesCount: number;
-        invalidFiles: string[];
-        duplicateBaseNames: { [baseName: string]: number };
-        extension: string;
-    };
-}
-
-/**
- * Checks if a filename matches the pattern: 2 digits, 3 letters, 4 digits.
- */
-function isValidFilename(filename: string): boolean {
+function isStrictlyValidFilename(filename: string): boolean {
     const pattern = /^\d{2}[a-zA-Z]{3}\d{4}$/;
     return pattern.test(filename);
 }
@@ -33,7 +22,7 @@ function extractValidPart(filename: string): string | null {
     const matches = [...filename.matchAll(pattern)];
     if (matches.length > 1) {
         const firstMatch = matches[0]?.[0];
-        console.warn(`Multiple valid patterns found in ${filename}. Using first match: ${firstMatch}`);
+        console.warn(`Multiple valid patterns found in ${chalk.blue.bold(filename)}. Using first match: ${chalk.blue.bold(firstMatch)}`);
     }
     return matches.length > 0 && matches[0] ? matches[0][0] : null;
 }
@@ -52,128 +41,244 @@ export async function analyzeFilenames(directory: string = ''): Promise<Sanitiza
     try {
         await access(currentDirectory);
     } catch (error) {
-        console.error(`Error: Directory "${currentDirectory}" does not exist or is inaccessible.`);
-        // Return a default error structure or throw? Let's return a structure.
+        console.error(`Error: Directory "${chalk.blue.bold(currentDirectory)}" does not exist or is inaccessible.`);
         return {
-            fileMap: {},
-            metadata: {
-                totalFiles: 0,
-                validFiles: 0,
-                invalidFilesCount: 0,
-                invalidFiles: [],
-                duplicateBaseNames: {},
-                extension: fileExtension,
-            }
+            totalFilesInDirectory: 0,
+            validIpynbFiles: {},
+            invalidFiles: [],
+            fileExtension: fileExtension
         };
     }
 
-    console.log(`Scanning directory: ${currentDirectory} for ${fileExtension} files`);
 
     let initialFiles: string[];
     try {
         initialFiles = await readdir(currentDirectory);
+        console.log(`\n${chalk.cyan.bold('Scanning directory:')} ${chalk.white.bold(currentDirectory)}`);
+        console.log(`${chalk.cyan.bold('Total files found:')} ${chalk.white.bold(initialFiles.length)}`);
     } catch (error) {
-        console.error(`Error reading directory: ${error.message}`);
+        console.error(`Error reading directory: ${String(error)}`);
         return {
-            fileMap: {},
-            metadata: {
-                totalFiles: 0,
-                validFiles: 0,
-                invalidFilesCount: 0,
-                invalidFiles: [],
-                duplicateBaseNames: {},
-                extension: fileExtension,
-            }
+            totalFilesInDirectory: 0,
+            validIpynbFiles: {},
+            invalidFiles: [],
+            fileExtension: fileExtension
         };
     }
 
     const targetFiles = initialFiles.filter(file => file.endsWith(fileExtension));
-    console.log(`Found ${targetFiles.length} ${fileExtension} files`);
+    console.log(`\n${chalk.green.bold('Found')} ${chalk.green.bold(targetFiles.length)} ${chalk.green.bold(fileExtension + ' files')} out of ${chalk.white.bold(initialFiles.length)} total files`);
 
-    const fileMap: { [originalName: string]: string } = {};
+    const validIpynbFiles: { [originalName: string]: string } = {};
     const proposedNames: Set<string> = new Set();
     const duplicates: Map<string, number> = new Map();
-    const invalidFilesList: string[] = [];
-    let validFileCount = 0;
+    const invalidFilesList: InvalidFileInfo[] = []; // List to store all invalid files with reasons
 
     // Plan proposed names
     for (const originalFile of targetFiles) {
         const baseName = path.parse(originalFile).name;
         let proposedName: string;
-        let isValid = false;
 
-        if (isValidFilename(baseName)) {
-            proposedName = originalFile;
-            isValid = true;
-            validFileCount++;
+        if (isStrictlyValidFilename(baseName)) {
+            // Filename is already perfect - extract just the registration number and convert to uppercase
+            proposedName = baseName.toUpperCase();
         } else {
+            // Filename is not perfect, try to extract a valid part
             const validPart = extractValidPart(baseName);
-            if (!validPart) {
-                console.log(`Warning: Could not extract valid pattern from ${originalFile}. Marking as invalid.`);
-                proposedName = originalFile; // Keep original name if invalid pattern
-                invalidFilesList.push(originalFile);
+            if (validPart) {
+                // Successfully extracted a valid part, propose a sanitized name (uppercase, no extension)
+                proposedName = validPart.toUpperCase();
+                // Note: This file was initially invalid but is now sanitizable.
             } else {
-                proposedName = `${validPart}${fileExtension}`;
-                // This file *had* an invalid name, even if we could extract a valid part
-                invalidFilesList.push(originalFile);
+                // Could not extract a valid pattern, mark as unsanitizable
+                proposedName = originalFile; // Keep original name
+                // Add to the list of invalid files with reason
+                invalidFilesList.push({
+                    filename: originalFile,
+                    reason: InvalidFileReason.UNSANITIZABLE,
+                    details: "Could not extract valid registration number pattern"
+                });
             }
         }
 
         let finalProposedName = proposedName;
-        const proposedBaseName = path.parse(proposedName).name;
+        // For unsanitizable files, we may still have the original filename with extension
+        const proposedBaseName = proposedName.endsWith(fileExtension) ? path.parse(proposedName).name : proposedName;
 
         // Check for potential name collisions among *proposed* names
         let collisionCounter = 1;
         while (proposedNames.has(finalProposedName)) {
             // If a collision occurs, mark the base name as having duplicates
             duplicates.set(proposedBaseName, (duplicates.get(proposedBaseName) || 1) + 1); // Start count from 2 for the first duplicate detected
-            finalProposedName = `${proposedBaseName}(${collisionCounter})${fileExtension}`;
+            finalProposedName = `${proposedBaseName}(${collisionCounter})`;
             collisionCounter++;
         }
 
-        fileMap[originalFile] = finalProposedName;
+        validIpynbFiles[originalFile] = finalProposedName;
         proposedNames.add(finalProposedName);
     }
 
-    // Convert duplicates map to a plain object for the result
-    const duplicateBaseNames: { [baseName: string]: number } = {};
-    duplicates.forEach((count, baseName) => {
-        duplicateBaseNames[baseName] = count;
-    });
+    // Collect file metadata for potential duplicates
+    const duplicateGroups: { [proposedBaseName: string]: { originalFile: string; lastModified: Date }[] } = {};
+    const duplicateFiles: { [regNo: string]: Array<{ originalFilename: string; isSelected: boolean; lastModified: Date }> } = {};
 
+    // Group files by their proposed base names to identify duplicates
+    for (const [originalFile, proposedName] of Object.entries(validIpynbFiles)) {
+        // Extract just the core base name, ignoring any (number) suffixes
+        const coreBaseName = proposedName.replace(/\(\d+\)$/, '');
 
-    const result: SanitizationResult = {
-        fileMap,
-        metadata: {
-            totalFiles: targetFiles.length,
-            validFiles: validFileCount,
-            invalidFilesCount: invalidFilesList.length,
-            invalidFiles: invalidFilesList,
-            duplicateBaseNames: duplicateBaseNames,
-            extension: fileExtension,
+        // Only track base names that might have duplicates
+        if (duplicates.has(coreBaseName)) {
+            if (!duplicateGroups[coreBaseName]) {
+                duplicateGroups[coreBaseName] = [];
+                // Initialize the duplicateFiles entry for this regNo
+                duplicateFiles[coreBaseName] = [];
+            }
+
+            // Get the file's last modified date
+            const fileStat = await stat(path.join(currentDirectory, originalFile));
+            const lastModified = fileStat.mtime;
+
+            duplicateGroups[coreBaseName].push({
+                originalFile,
+                lastModified
+            });
+
+            // Also add to our new duplicateFiles structure with isSelected defaulting to false
+            if (!duplicateFiles[coreBaseName]) {
+                duplicateFiles[coreBaseName] = [];
+            }
+            duplicateFiles[coreBaseName].push({
+                originalFilename: originalFile,
+                isSelected: false, // Will be updated after user selection
+                lastModified
+            });
         }
+    }
+
+    // Prompt user to select which file to keep for each duplicate group
+    for (const [regNo, files] of Object.entries(duplicateGroups)) {
+        console.log(`\n${chalk.yellow.bold('Duplicate files found for base name:')} ${chalk.blue.bold(regNo)}`);
+
+        const choices = files.map(file => ({
+            name: `${file.originalFile} (Last modified: ${file.lastModified.toLocaleString()})`,
+            value: file.originalFile
+        }));
+
+        const { selectedFile } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedFile',
+                message: 'Which file would you like to keep?',
+                choices
+            }
+        ]);            // Update fileMap to keep only the selected file with its original proposed name
+        // Mark other files as ignored by removing them from fileMap
+        const extractedRegNo = [...regNo.matchAll(/\d{2}[a-zA-Z]{3}\d{4}/g)][0]?.[0]?.toUpperCase() || regNo;
+
+        for (const file of files) {
+            const isSelected = file.originalFile === selectedFile;
+
+            // Update the isSelected status in our duplicateFiles structure
+            if (duplicateFiles[extractedRegNo]) {
+                const fileInfo = duplicateFiles[extractedRegNo].find(f => f.originalFilename === file.originalFile);
+                if (fileInfo) {
+                    fileInfo.isSelected = isSelected;
+                }
+            }
+
+            // Remove non-selected files from validIpynbFiles and add to invalidFiles
+            if (!isSelected) {
+                // Add to invalidFiles list with reason
+                invalidFilesList.push({
+                    filename: file.originalFile,
+                    reason: InvalidFileReason.DUPLICATE,
+                    details: `Duplicate of ${selectedFile}`,
+                    duplicateOf: selectedFile,
+                    lastModified: file.lastModified
+                });
+
+                // Remove from validIpynbFiles
+                delete validIpynbFiles[file.originalFile];
+            }
+        }
+    }    // Prepare the result with our updated structure
+    const result: SanitizationResult = {
+        totalFilesInDirectory: targetFiles.length,
+        validIpynbFiles: validIpynbFiles,
+        invalidFiles: invalidFilesList,
+        fileExtension: fileExtension
     };
 
-    console.log("\n--- Analysis Summary ---");
-    console.log(`Total ${fileExtension} files found: ${result.metadata.totalFiles}`);
-    console.log(`Files with initially valid names: ${result.metadata.validFiles}`);
-    console.log(`Files with initially invalid names: ${result.metadata.invalidFilesCount}`);
-    if (result.metadata.invalidFilesCount > 0) {
-        console.log("Invalid files:", result.metadata.invalidFiles);
-    }
-    if (Object.keys(result.metadata.duplicateBaseNames).length > 0) {
-        console.log("Base names leading to potential duplicates after sanitization:", result.metadata.duplicateBaseNames);
-    } else {
-        console.log("No potential duplicate names detected after sanitization.");
+    // Display all files with highlighted register numbers just before the Analysis Summary
+    console.log(`\n${chalk.cyan.underline('All files in directory:')}`);
+    for (const file of initialFiles) {
+        try {
+            const fileStats = await stat(path.join(currentDirectory, file));
+            const isDirectory = fileStats.isDirectory();
+            const isDuplicate = invalidFilesList.some(invalidFile =>
+                invalidFile.filename === file && invalidFile.reason === InvalidFileReason.DUPLICATE
+            );
+
+            if (isDirectory) {
+                console.log(`${chalk.blue.bold('📁')} ${chalk.blue(file)}`);
+            } else {
+                // Extract register number pattern if exists
+                const regPattern = /(\d{2}[a-zA-Z]{3}\d{4})/;
+                const match = file.match(regPattern);
+
+                // Check if file is .ipynb extension
+                if (file.endsWith('.ipynb')) {
+                    if (match) {
+                        // IPYNB file with register number - highlight register number in bold
+                        const beforeMatch = file.substring(0, match.index);
+                        const afterMatch = file.substring(match.index! + match[0].length);
+
+                        if (isDuplicate) {
+                            // Highlight duplicates in purple
+                            console.log(`${chalk.white('📄')} ${chalk.white(beforeMatch)}${chalk.magenta.bold(match[0])}${chalk.white(afterMatch)}`);
+                        } else {
+                            console.log(`${chalk.white('📄')} ${chalk.white(beforeMatch)}${chalk.bold(match[0])}${chalk.white(afterMatch)}`);
+                        }
+                    } else {
+                        // IPYNB file without register number - highlight in bold red
+                        console.log(`${chalk.white('📄')} ${chalk.red.bold(file)}`);
+                    }
+                } else {
+                    // Not an .ipynb file - highlight in red
+                    console.log(`${chalk.white('📄')} ${chalk.red.bold(file)}`);
+                }
+            }
+        } catch (error) {
+            console.log(`📄 ${file}`); // Fallback if stat fails
+        }
     }
 
+    console.log(`\n${chalk.red.bold('--- Analysis Summary ---')}`);
+    console.log(`\nTotal ${chalk.red.bold(fileExtension)} files found: ${chalk.blue.bold(result.totalFilesInDirectory)}`);
+
+    const unsanitizableCount = invalidFilesList.filter(f => f.reason === InvalidFileReason.UNSANITIZABLE).length;
+    const duplicateCount = invalidFilesList.filter(f => f.reason === InvalidFileReason.DUPLICATE).length;
+
+    console.log(`\nValid files: ${chalk.green.bold(Object.keys(validIpynbFiles).length)}`);
+    console.log(`\nInvalid files: ${chalk.red.bold(invalidFilesList.length)}`);
+    console.log(`   - Unsanitizable (no valid pattern found): ${chalk.red.bold(unsanitizableCount)}`);
+    console.log(`   - Duplicates (removed): ${chalk.yellow.bold(duplicateCount)}`);
+
+    if (unsanitizableCount > 0) {
+        console.log("\nUnsanitizable files (kept original names):",
+            invalidFilesList
+                .filter(f => f.reason === InvalidFileReason.UNSANITIZABLE)
+                .map(f => f.filename)
+        );
+    }
+    if (duplicateCount > 0) {
+        console.log("\nDuplicate files (removed):",
+            invalidFilesList
+                .filter(f => f.reason === InvalidFileReason.DUPLICATE)
+                .map(f => `${f.filename} (duplicate of ${f.duplicateOf})`)
+        );
+    }
 
     return result;
 }
-
-// Remove or comment out the direct execution part
-// const directory = process.argv[2] || '';
-// analyzeFilenames(directory).then(result => {
-//     console.log("\n--- Result Object ---");
-//     console.log(JSON.stringify(result, null, 2));
-// });

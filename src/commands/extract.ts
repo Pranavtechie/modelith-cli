@@ -1,11 +1,12 @@
-import { analyzeFilenames, type SanitizationResult } from "@utils/sanitize-filenames"; // STEP 1
+import { analyzeFilenames } from "@utils/sanitize-filenames"; // STEP 1
+import { type SanitizationResult } from '@utils/types';
 import { generateFolderHash } from "@utils/folder-hash"; // STEP 2
 import { NotebookAnalyzer } from "@utils/NotebookAnalyzer"; // STEP 5
 import { db } from "@db/client"; // STEP 6
 import { Run, NotebookMetadata, Similarity, Student } from "@db/schema"; // STEP 6 & 8 & Student lookup
 import { eq } from "drizzle-orm"; // For DB queries
 import { compareAstsInFolder } from "@utils/ast-comparison"; // STEP 8
-import { access, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, parse, resolve } from 'node:path'; // Import parse and resolve
 import { randomUUIDv7 } from "bun"; // For Run ID if hash fails
@@ -42,7 +43,7 @@ export const extract = new Command()
         // AST comparison outputs are handled within compareAstsInFolder
 
         console.log(`Analyzing notebooks in: ${chalk.blue(folderPath)}`);
-        console.log(`Outputting results to: ${chalk.green(outputBasePath)}`);
+        console.log(`Outputting results to: ${chalk.green(outputBasePath)}\n\n`);
 
         let selectedCohortId: string | null = null; // Define selectedCohortId
 
@@ -66,16 +67,16 @@ export const extract = new Command()
             }
 
             // STEP 1: Validate input folder and get file mapping
-            console.log("Step 1: Analyzing filenames...");
             const analysisResult: SanitizationResult = await analyzeFilenames(folderPath);
-            if (analysisResult.metadata.totalFiles === 0) {
+            if (analysisResult.totalFilesInDirectory === 0) {
                 console.log("No .ipynb files found in the specified directory. Exiting.");
                 return;
             }
-            console.log(`Found ${analysisResult.metadata.totalFiles} notebooks. ${analysisResult.metadata.invalidFilesCount} have invalid names.`);
+
+
+            return null;
 
             // STEP 2: Generate hash for the folder
-            console.log("Step 2: Generating folder hash...");
             const folderHash = await generateFolderHash(folderPath);
             const runId = folderHash ?? randomUUIDv7(); // Use hash or fallback to UUID
             console.log(`Generated Run ID: ${runId}`);
@@ -85,8 +86,8 @@ export const extract = new Command()
             const evaluationDictionary: Record<string, any> = {};
             const allNotebookMetrics: any[] = []; // To store metrics for DB insertion
 
-            for (const originalFilename in analysisResult.fileMap) {
-                const proposedFilename = analysisResult.fileMap[originalFilename];
+            for (const originalFilename in analysisResult.validIpynbFiles) {
+                const proposedFilename = analysisResult.validIpynbFiles[originalFilename]
                 const originalFilePath = join(folderPath, originalFilename);
                 const proposedBaseName = parse(proposedFilename).name; // Use parse from node:path
                 const astFilePath = join(astOutputDir, `${proposedBaseName}.ast.json`);
@@ -103,7 +104,7 @@ export const extract = new Command()
                         const studentResult = await db.select({ id: Student.studentId })
                             .from(Student)
                             .where(eq(Student.regNo, regNo))
-                            .limit(1);
+                            .limit(1)
                         if (studentResult.length > 0) {
                             studentId = studentResult[0].id;
                             console.log(`Found studentId: ${studentId} for regNo: ${regNo}`);

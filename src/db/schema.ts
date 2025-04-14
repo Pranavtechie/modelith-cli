@@ -57,12 +57,12 @@ export const NotebookMetadata = sqliteTable("NotebookMetadata", {
 
 export const Similarity = sqliteTable("Similarity", {
     runId: text("runId").references(() => Run.runId),
-    fileA: text("fileA").notNull(),
-    fileB: text("fileB").notNull(),
+    studentA: text("studentA").references(() => Student.studentId).notNull(),
+    studentB: text("studentB").references(() => Student.studentId).notNull(),
     similarityScore: real("similarityScore").notNull(),
     treeEditDistance: real("treeEditDistance").notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.fileA, table.fileB] }),
+    pk: primaryKey({ columns: [table.studentA, table.studentB] }),
 }));
 
 export const Cohort = sqliteTable("Cohort", {
