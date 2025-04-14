@@ -20,7 +20,7 @@ interface Notebook {
 export class NotebookAnalyzer {
     private notebookFile: string;
     private notebook: Notebook;
-    private parser: Parser;
+    private parser!: Parser; // Added definite assignment assertion
     private metrics: Record<string, any> = {};
     private tree: any;
 
@@ -34,7 +34,7 @@ export class NotebookAnalyzer {
             this.notebook = { cells: [], metadata: {} };
         }
         this.parser = new Parser();
-        this.parser.setLanguage(Python);
+        this.parser.setLanguage(Python as Parser.Language);
         this.analyze(); // Initial analysis (sync parts + async kickoff)
     }
 

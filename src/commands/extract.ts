@@ -84,6 +84,7 @@ export const extract = new Command()
                     const metrics = await analyzer.getMetrics();
                     const ast = analyzer.getAst();
 
+
                     notebookMetrics.push({
                         ...metrics,
                         filename: proposedFilename,
