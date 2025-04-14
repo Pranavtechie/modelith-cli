@@ -1,24 +1,25 @@
 name: Build and Publish to npm
+
 on:
-    push:
-        tags:
-            - "v*"
-    workflow_dispatch:
-        jobs:
-            publish:
-                runs-on: ubuntu-latest
-                steps:
-                    - uses: actions/checkout@v4
-                    - uses: oven-sh/setup-bun@v2
-                    with:
-                        bun-version: latest
-                    - name: Install Dependencies
-                    run: bun install
-                    - name: Build CLI
-                    run: bun run build:cli
-                    - name: Build Frontend
-                    run: bun run build:frontend
-                    - name: Publish to npm
-                    run: bun publish
-                    env:
-                        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    release:
+        types: [published]
+    workflow_dispatch: # Enable manual trigger.
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - name: Install Dependencies
+              run: bun install
+            - name: Build CLI
+              run: bun run build:cli
+            - name: Build Frontend
+              run: bun run build:frontend
+            - name: Publish to npm
+              run: bun publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
