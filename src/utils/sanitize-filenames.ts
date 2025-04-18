@@ -266,18 +266,22 @@ export async function analyzeFilenames(directory: string = ''): Promise<Sanitiza
     console.log(`   - Duplicates (removed): ${chalk.yellow.bold(duplicateCount)}`);
 
     if (unsanitizableCount > 0) {
-        console.log("\nUnsanitizable files (kept original names):",
-            invalidFilesList
-                .filter(f => f.reason === InvalidFileReason.UNSANITIZABLE)
-                .map(f => f.filename)
-        );
+        console.log("\nUnsanitizable files (kept original names):")
+
+        invalidFilesList
+            .filter(f => f.reason === InvalidFileReason.UNSANITIZABLE)
+            .map(f => f.filename)
+            .forEach(f => console.log(`\t- ${chalk.red(f)}`));
     }
     if (duplicateCount > 0) {
-        console.log("\nDuplicate files (removed):",
-            invalidFilesList
-                .filter(f => f.reason === InvalidFileReason.DUPLICATE)
-                .map(f => `${f.filename} (duplicate of ${f.duplicateOf})`)
-        );
+        console.log("\nDuplicate files (removed):");
+
+        invalidFilesList
+            .filter(f => f.reason === InvalidFileReason.DUPLICATE)
+            .map(f => `${f.filename} (duplicate of ${f.duplicateOf})`)
+            .forEach(f => console.log(`\t- ${chalk.red(f)}`));
+
+        console.log(`\n\n`)
     }
 
     return result;

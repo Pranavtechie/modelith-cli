@@ -36,7 +36,7 @@ function calculateNormalizedSimilarity(editDistance: number, maxDistance: number
     return Math.max(0, Math.min(1, similarity));
 }
 
-// --- Zhang-Shasha Algorithm Implementation (Copied from ast-comparison.ts) ---
+// --- Zhang-Shasha Algorithm Implementation ---
 
 interface PostOrderNode {
     node: AstNode;
@@ -126,11 +126,11 @@ function calculateTreeEditDistance(node1: AstNode | undefined, node2: AstNode | 
     if (m === 0) return n;
 
     type Row = number[];
-    const treeDist: Row[] = Array(n + 1).fill(0).map(() => Array(m + 1).fill(0));
+    const treeDist: Row[] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
 
     for (let i = 1; i <= n; i++) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        treeDist[i]![0] = treeDist[i - 1]![0] + tedCost(postOrder1[i - 1]!.node, undefined);
+        treeDist[i]![0] = treeDist[i - 1]![0]! + tedCost(postOrder1[i - 1]!.node, undefined);
     }
     for (let j = 1; j <= m; j++) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -226,7 +226,6 @@ interface WorkerResultError {
     error: string;
 }
 
-type WorkerResult = WorkerResultSuccess | WorkerResultError;
 
 parentPort.on('message', (task: WorkerTask) => {
     const { index1, index2, ast1String, ast2String } = task;
@@ -255,6 +254,3 @@ parentPort.on('message', (task: WorkerTask) => {
         } as WorkerResultError);
     }
 });
-
-// Optional: Add console log to confirm worker start
-// console.log(`AST Worker thread started.`);

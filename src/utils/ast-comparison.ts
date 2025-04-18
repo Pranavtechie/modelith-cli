@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import svg2img from 'svg2img'; // Assuming svg2img types might need adjustment
 import { Worker } from 'worker_threads'; // Import Worker
 import os from 'os'; // Import os to get CPU count
+import ora from 'ora';
 
 // Define the AST Node structure (adjust based on your actual AST structure)
 interface AstNode {
@@ -38,31 +39,13 @@ function loadAstsFromJson(folderPath: string): Map<string, AstNode> {
                 const ast = JSON.parse(content) as AstNode; // Assuming root is the node
                 asts.set(file, ast);
             } catch (error) {
-                console.error(`Error reading or parsing AST file ${filePath}:`, error);
+                // console.error(`Error reading or parsing AST file ${filePath}:`, error);
             }
         }
     } catch (error) {
-        console.error(`Error reading directory ${folderPath}:`, error);
+        // console.error(`Error reading directory ${folderPath}:`, error);
     }
     return asts;
-}
-
-/**
- * Counts the total number of nodes in an AST subtree.
- * Handles undefined nodes gracefully.
- * @param node The root node of the subtree (or undefined).
- * @returns The total number of nodes.
- */
-function countAstNodes(node: AstNode | undefined): number {
-    if (!node) return 0; // If node is undefined, count is 0
-    let count = 1; // Count the node itself
-    if (node.children) {
-        for (const child of node.children) {
-            // Recursively count children, passing potentially undefined children
-            count += countAstNodes(child);
-        }
-    }
-    return count;
 }
 
 /**
@@ -98,7 +81,7 @@ function areAstsEquivalent(node1: AstNode | undefined, node2: AstNode | undefine
             const children1 = node1.children;
             const children2 = node2.children;
 
-            if (isCommutative && children1?.length >= 3 && children2?.length >= 3) {
+            if (isCommutative && children1?.length! >= 3 && children2?.length! >= 3) {
                 // Add checks to ensure children arrays are defined here
                 if (!children1 || !children2) {
                     // This case should technically not be reached due to the length check, but belts and suspenders
@@ -165,119 +148,22 @@ function compareChildrenEquivalence(children1: AstNode[] | undefined, children2:
 }
 
 
-// --- Zhang-Shasha Algorithm Implementation ---
-
-interface PostOrderNode {
-    node: AstNode;
-    index: number; // Post-order index (1-based)
-    leftmostDescendantIndex: number; // Post-order index of the leftmost descendant
-}
-
-/**
- * Performs a post-order traversal and collects node info needed for Zhang-Shasha.
- * @param root The root node of the tree.
- * @returns An array of PostOrderNode objects.
- */
-function getPostOrderNodes(root: AstNode | undefined): PostOrderNode[] {
-    const postOrderList: PostOrderNode[] = [];
-    let index = 0;
-
-    function traverse(node: AstNode | undefined): number { // Returns the index of the leftmost descendant of this node
-        if (!node) return 0; // Or handle appropriately if nodes can't be undefined in valid trees
-
-        let leftmostDescendantIndex = Infinity;
-
-        if (node.children && node.children.length > 0) {
-            // Traverse children first
-            for (const child of node.children) {
-                const childLeftmost = traverse(child);
-                if (childLeftmost !== 0) { // Ensure valid index
-                    leftmostDescendantIndex = Math.min(leftmostDescendantIndex, childLeftmost);
-                }
-            }
-        } else {
-            // Leaf node: its own leftmost descendant index will be its post-order index
-            leftmostDescendantIndex = index + 1; // Tentative, will be set below
-        }
-
-
-        // Visit node (assign post-order index)
-        index++;
-        const currentNodeIndex = index;
-
-        // If it was a leaf, its leftmost is itself
-        if (leftmostDescendantIndex === Infinity || leftmostDescendantIndex > currentNodeIndex) {
-            leftmostDescendantIndex = currentNodeIndex;
-        }
-
-
-        postOrderList.push({
-            node: node,
-            index: currentNodeIndex,
-            leftmostDescendantIndex: leftmostDescendantIndex
-        });
-
-        return leftmostDescendantIndex; // Return the leftmost index found in this subtree
-    }
-
-    traverse(root);
-    // Sort by index just to be sure, though traversal should guarantee it
-    // postOrderList.sort((a, b) => a.index - b.index);
-    return postOrderList;
-}
-
-
-/**
- * Cost function for node operations in TED.
- * @param node1 First node (can be undefined for insertion/deletion).
- * @param node2 Second node (can be undefined for insertion/deletion).
- * @returns Cost of the operation (0 or 1).
- */
-function tedCost(node1: AstNode | undefined, node2: AstNode | undefined): number {
-    const DELETE_COST = 1;
-    const INSERT_COST = 1;
-    const SUBSTITUTE_COST = 1; // Cost if nodes are different (types differ or text differs for relevant types)
-    const MATCH_COST = 0; // Cost if nodes are considered equivalent
-
-    if (node1 === undefined && node2 === undefined) return 0; // Should not happen
-    if (node1 === undefined) return INSERT_COST; // Inserting node2
-    if (node2 === undefined) return DELETE_COST; // Deleting node1
-
-    // Substitution/Match cost: Compare only the current nodes
-    if (node1.type !== node2.type) {
-        return SUBSTITUTE_COST; // Types differ
-    }
-
-    // Types match, check text for relevant node types
-    switch (node1.type) {
-        case 'identifier':
-        case 'string':
-        case 'integer':
-        case 'float':
-        case 'comment':
-            return node1.text === node2.text ? MATCH_COST : SUBSTITUTE_COST;
-        // For other structural nodes, type match is sufficient for a match
-        default:
-            return MATCH_COST;
-    }
-}
-
-
 /**
  * Compares ASTs from .ast.json files in the given folder,
  * generates a plot, and stores results in a JSON file.
  * @param folderPath Path to the folder containing .ast.json files
  */
 export async function compareAstsInFolder(folderPath: string): Promise<void> {
-    console.log(`Loading ASTs from: ${folderPath}`);
+    // Use ora spinner for progress
+    const spinner = ora(`Loading ASTs from: ${folderPath}`).start();
     const astMap = loadAstsFromJson(folderPath);
     const filenames = Array.from(astMap.keys()).sort(); // Sort filenames for consistent ordering
     const numAsts = filenames.length;
 
-    console.log(`Found ${numAsts} AST files for comparison.`);
+    spinner.text = `Found ${numAsts} AST files for comparison.`;
 
     if (numAsts < 2) {
-        console.log("Need at least two AST files for comparison.");
+        spinner.fail("Need at least two AST files for comparison.");
         return;
     }
 
@@ -293,7 +179,7 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
     }
 
     // --- Parallel Comparison Setup ---
-    console.log("Preparing tasks for parallel AST comparison...");
+    spinner.text = "Preparing tasks for parallel AST comparison...";
     const tasks: { index1: number, index2: number, ast1String: string, ast2String: string }[] = [];
     const astStrings = filenames.map(fname => {
         const ast = astMap.get(fname);
@@ -313,14 +199,17 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
     }
 
     const numWorkers = Math.min(os.cpus().length, tasks.length); // Use available cores, but not more than tasks
-    console.log(`Starting ${numWorkers} worker threads for ${tasks.length} comparison tasks...`);
+    spinner.text = `Starting ${numWorkers} worker threads for ${tasks.length} comparison tasks...`;
     const workers: Worker[] = [];
     const workerPromises: Promise<void>[] = [];
     let tasksAssigned = 0;
     let tasksCompleted = 0;
     const totalTasks = tasks.length;
 
-    const workerScriptPath = join(__dirname, 'ast-worker.js'); // Resolve worker script path
+    const workerScriptPath = join(__dirname, 'ast-worker.ts'); // Resolve worker script path
+
+    // Buffer for errors and worker messages
+    const workerErrors: string[] = [];
 
     for (let i = 0; i < numWorkers; i++) {
         const worker = new Worker(workerScriptPath);
@@ -338,6 +227,8 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
             };
 
             worker.on('message', (result: any) => { // Use 'any' for now, refine if needed
+                // Buffer worker message instead of logging
+                // workerMessages.push(`Worker ${i} processed task ${result.index1} - ${result.index2}`);
                 tasksCompleted++;
                 if (result.status === 'success') {
                     const { index1, index2, distance, similarity } = result;
@@ -353,31 +244,28 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
                         similarity
                     });
                 } else {
-                    console.error(`Worker task error for indices (${result.index1}, ${result.index2}): ${result.error}`);
+                    workerErrors.push(`Worker task error for indices (${result.index1}, ${result.index2}): ${result.error}`);
                     // Optionally handle errors differently, e.g., set distance/similarity to NaN
                 }
 
-                if (tasksCompleted % 100 === 0 || tasksCompleted === totalTasks) {
-                    console.log(`Completed ${tasksCompleted} / ${totalTasks} tasks...`);
+                if (tasksCompleted % 10 === 0 || tasksCompleted === totalTasks) {
+                    spinner.text = `Completed ${tasksCompleted} / ${totalTasks} tasks`;
                 }
 
                 assignTask(); // Assign next task to this worker
             });
 
             worker.on('error', (err) => {
-                console.error(`Worker error (Worker ${i}):`, err);
+                workerErrors.push(`Worker error (Worker ${i}): ${err}`);
                 reject(err); // Reject the promise on worker error
             });
 
             worker.on('exit', (code) => {
                 if (code !== 0) {
-                    console.warn(`Worker ${i} stopped with exit code ${code}`);
-                    // Might indicate an unhandled error or premature termination
+                    workerErrors.push(`Worker ${i} stopped with exit code ${code}`);
                 }
                 // If exit happens before promise resolution (e.g., error), ensure it rejects or resolves
-                // This path might be redundant if errors/termination handle resolution/rejection
                 if (tasksAssigned >= totalTasks) resolve(); // Resolve if worker finished normally after all tasks
-                // else { reject(new Error(`Worker ${i} exited prematurely with code ${code}`)) }
             });
 
             assignTask(); // Assign the first task
@@ -388,18 +276,25 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
     // Wait for all workers to finish
     try {
         await Promise.all(workerPromises);
-        console.log("All worker tasks completed.");
+        spinner.succeed("All worker tasks completed.");
     } catch (error) {
-        console.error("Error occurred during worker execution:", error);
+        spinner.fail("Error occurred during worker execution.");
+        workerErrors.push(`Error occurred during worker execution: ${error}`);
         // Decide how to proceed: maybe exit, or try to continue with partial results?
         console.log("Attempting to proceed with potentially partial results...");
     }
 
-    console.log("Pairwise comparison finished.");
+    // Print any buffered errors after ora is done
+    if (workerErrors.length > 0) {
+        for (const errMsg of workerErrors) {
+            console.error(errMsg);
+        }
+    }
+
 
     // Generate heatmap plot - using D3.js and convert SVG to PNG with canvas
     try {
-        console.log("Generating heatmap using D3.js");
+        spinner.start("\nGenerating heatmap using D3.js");
         const cellSize = 20; // Smaller cells for potentially many files
         const maxLabelLength = 20; // Limit label length
         const margin = { top: 50, right: 50, bottom: 150, left: 150 }; // Increased margins for rotated labels
@@ -480,28 +375,28 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
         }
         const svgData = new dom.window.XMLSerializer().serializeToString(svgElement);
 
-        console.log("Converting SVG to PNG...");
+        spinner.text = "Converting SVG to PNG...";
         // Use 'as any' for format if type issues persist with svg2img
         svg2img(svgData, { format: 'png' as any }, (error, buffer) => {
             if (error) {
-                console.error(`Error converting SVG to PNG: ${error}`);
+                spinner.fail(`Error converting SVG to PNG: ${error}`);
                 return;
             }
             try {
-                fs.writeFileSync('ast_similarity_heatmap.png', buffer);
-                console.log("Heatmap saved as ast_similarity_heatmap.png");
+                Bun.write('ast_similarity_heatmap.png', buffer);
+                spinner.succeed("Heatmap saved as ast_similarity_heatmap.png");
             } catch (writeError) {
-                console.error(`Error writing PNG file: ${writeError}`);
+                spinner.fail(`Error writing PNG file: ${writeError}`);
             }
         });
     } catch (error) {
-        console.error(`Error generating plot with D3: ${error}`);
+        spinner.fail(`Error generating plot with D3: ${error}`);
     }
 
     // Store results in a JSON file
     const resultsFilename = "ast_comparison_results.json";
     try {
-        fs.writeFileSync(resultsFilename, JSON.stringify(results, null, 2)); // Use 2 spaces for indentation
+        Bun.write(resultsFilename, JSON.stringify(results, null, 2));
         console.log(`AST comparison complete. Results stored in ${resultsFilename}`);
     } catch (error) {
         console.error(`Error writing results to file ${resultsFilename}: ${error}`);

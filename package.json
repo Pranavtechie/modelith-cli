@@ -14,7 +14,7 @@
 		"generate": "bun x --bun drizzle-kit generate",
 		"build": "bun run build:cli && bun run build:frontend"
 	},
-	"packageManager": "bun@1.2.9",
+	"packageManager": "bun@latest",
 	"files": [
 		"drizzle",
 		"cli-dist",

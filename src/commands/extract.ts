@@ -1,14 +1,14 @@
 import { analyzeFilenames } from "@utils/sanitize-filenames";
-import { type SanitizationResult, type NotebookMetadataObject, type NotebookMetricsSubset } from '@utils/types'; // Updated to use refactored type
+import { type SanitizationResult, type NotebookMetadataObject } from '@utils/types'; // Updated to use refactored type
 import { generateFolderHash } from "@utils/folder-hash";
 import { NotebookAnalyzer } from "@utils/NotebookAnalyzer";
 import { db } from "@db/client";
-import { Run, type NotebookMetadata, Student } from "@db/schema";
+import { Run, NotebookMetadata, Student } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { compareAstsInFolder } from "@utils/ast-comparison";
 import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, parse, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { randomUUIDv7 } from "bun";
 import { Command } from "commander";
 import { selectCohort } from "../utils/cohortUtils";
@@ -55,18 +55,16 @@ export const extract = new Command()
             }
 
             const runId = (await generateFolderHash(paths.folder)) ?? randomUUIDv7();
-            console.log(`\nGenerated Run ID: ${runId}`);
 
             const evaluation = {};
             const notebookMetrics: NotebookMetadataObject[] = [];
 
-            for (const [originalFilename, proposedFilename] of Object.entries(analysisResult.validFiles)) {
+            for (const [originalFilename, regNo] of Object.entries(analysisResult.validFiles)) {
                 const filePaths = {
                     original: join(paths.folder, originalFilename),
-                    ast: join(paths.astOutput, `${parse(proposedFilename).name}.ast.json`),
+                    ast: join(paths.astOutput, `${regNo}.ast.json`),
                 };
 
-                const regNo = parse(proposedFilename).name;
                 let studentId: string | null = null;
 
                 try {
@@ -87,14 +85,14 @@ export const extract = new Command()
 
                     notebookMetrics.push({
                         ...metrics,
-                        filename: proposedFilename,
+                        filename: regNo,
                         runId,
                         studentId
                     });
 
-                    if (ast) await analyzer.saveAstToFile(paths.astOutput, proposedFilename);
+                    if (ast) await analyzer.saveAstToFile(paths.astOutput, regNo);
 
-                    evaluation[proposedFilename] = {
+                    evaluation[regNo] = {
                         originalFilename,
                         status: 'processed',
                         metricsSummary: {
@@ -103,12 +101,12 @@ export const extract = new Command()
                             markdownCells: metrics.markdownCells,
                             errors: metrics.errorCellCount,
                         },
-                        astPath: ast ? join('ast_files', `${parse(proposedFilename).name}.ast.json`) : null,
+                        astPath: ast ? join('ast_files', `${regNo}.ast.json`) : null,
                         studentId,
                     };
                 } catch (error) {
                     console.error(`Error processing ${originalFilename}: ${error.message}`);
-                    evaluation[proposedFilename] = {
+                    evaluation[regNo] = {
                         originalFilename,
                         status: 'error',
                         error: error.message,
@@ -155,7 +153,8 @@ export const extract = new Command()
             }
 
             console.log("\nExtraction process completed.");
-            return;
+            process.exit(0)
+
 
         } catch (error) {
             console.error(`\nAn error occurred during the extraction process: ${error.message}`);
