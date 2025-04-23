@@ -57,3 +57,14 @@
 - based on the above point, figure out the difference between native modules and how the node wrapper around the tree-sitter package is written and functions.
 
 - stupid mistake #xx, I didn't know that I was supposed to add a shebang in the entry file which is `src/index.ts` for bun to recognize it as a valid executable.
+
+- !!! Fix the bun worker that's doing more tasks than necessary. Figure out why the tasks are exceeding n _ n -1 for comparing and then also figure out why on exactly (n _ n-1)/2 tasks are being added to the database, this logic should be moved to the before the worker tasks are assigned.
+
+- Check Srilaya's notebooks in the submissions and figure out why I get this error every time. 
+    ```
+    Error processing 22bce1366-srilaya-12.ipynb: cell.source.join is not a function. (In 'cell.source.join("")', 'cell.source.join' is undefined)
+    ```
+
+- check out if https://bunup.dev/ is a good choice, or else can I do these things by myself in the current setup. 
+
+- 

@@ -3,7 +3,7 @@ import { type SanitizationResult, type NotebookMetadataObject } from '@utils/typ
 import { generateFolderHash } from "@utils/folder-hash";
 import { NotebookAnalyzer } from "@utils/NotebookAnalyzer";
 import { db } from "@db/client";
-import { Run, NotebookMetadata, Student } from "@db/schema";
+import { Run, NotebookMetadata, Student, Similarity } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { compareAstsInFolder } from "@utils/ast-comparison";
 import { mkdir } from 'node:fs/promises';
@@ -13,15 +13,16 @@ import { randomUUIDv7 } from "bun";
 import { Command } from "commander";
 import { selectCohort } from "../utils/cohortUtils";
 import chalk from 'chalk';
+import inquirer from 'inquirer';
 
 export const extract = new Command()
     .name("extract")
     .description("Extract metadata, metrics, and ASTs from Jupyter notebooks")
-    .option("-f, --folder <folder>", "Folder containing Jupyter Notebooks", process.cwd())
+    .option("-i, --input <input>", "Folder containing Jupyter Notebooks", process.cwd())
     .option("-o, --output <output>", "Output directory for analysis results", "modelith-analysis")
     .action(async (options) => {
         const paths = {
-            folder: resolve(options.folder),
+            folder: resolve(options.input),
             outputBase: resolve(options.output),
             astOutput: join(resolve(options.output), 'ast_files'),
             evaluationFile: join(resolve(options.output), 'evaluation.json'),
@@ -38,6 +39,34 @@ export const extract = new Command()
             }
 
             const cohortId = selectedCohort.cohortId;
+
+            // Prompt user for a unique run name for this cohort
+            let runName: string | undefined;
+            let existingNames: string[] = [];
+            try {
+                // Fetch all run names for this cohort
+                const runs = await db.select({ name: Run.name }).from(Run).where(eq(Run.cohortId, cohortId));
+                existingNames = runs.map(r => r.name).filter(Boolean);
+            } catch (err) {
+                console.error('Error fetching existing run names:', err);
+            }
+            while (!runName) {
+                const { value } = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'value',
+                        message: 'Enter a unique name for this run:',
+                        validate: (input: string) => {
+                            if (!input.trim()) return 'Run name cannot be empty.';
+                            if (existingNames.includes(input.trim())) return 'Run name already exists in this cohort. Please enter a different name.';
+                            return true;
+                        },
+                    },
+                ]);
+                if (!existingNames.includes(value.trim()) && value.trim()) {
+                    runName = value.trim();
+                }
+            }
 
             // Ensure output directories exist
             for (const dir of [paths.outputBase, paths.astOutput]) {
@@ -121,8 +150,9 @@ export const extract = new Command()
             if (notebookMetrics.length > 0) {
                 try {
                     await db.insert(Run).values({
-                        runId,
+                        runId: randomUUIDv7(),
                         runHash: runId,
+                        name: runName,
                         timestamp: new Date(),
                         notebookCount: analysisResult.totalFilesInDirectory,
                         cohortId,
@@ -143,10 +173,39 @@ export const extract = new Command()
             const processedCount = Object.values(evaluation).filter(v => v.status === 'processed').length;
             if (processedCount >= 2) {
                 try {
-                    await compareAstsInFolder(paths.astOutput, paths.outputBase, runId);
+                    const similarityResults = await compareAstsInFolder(paths.astOutput);
+                    if (similarityResults && similarityResults.length > 0) {
+                        // Map regNo to studentId for quick lookup
+                        const regNoToStudentId = Object.entries(analysisResult.validFiles).reduce((acc, [orig, regNo]) => {
+                            const sid = notebookMetrics.find(m => m.filename === regNo)?.studentId;
+                            if (sid) acc[regNo] = sid;
+                            return acc;
+                        }, {} as Record<string, string>);
+                        const similarityRows = similarityResults.map(({ file1, file2, editDistance, similarity }) => {
+                            const studentA = regNoToStudentId[file1.replace(/\.ast\.json$/, '')] || null;
+                            const studentB = regNoToStudentId[file2.replace(/\.ast\.json$/, '')] || null;
+                            return {
+                                runId,
+                                studentA,
+                                studentB,
+                                similarityScore: similarity,
+                                treeEditDistance: editDistance
+                            };
+                        }).filter(row => row.studentA && row.studentB);
+                        try {
+                            if (similarityRows.length > 0) {
+                                await db.insert(Similarity).values(similarityRows);
+                                console.log(`Inserted ${similarityRows.length} similarity records into the database.`);
+                            } else {
+                                console.log('No valid similarity records to insert.');
+                            }
+                        } catch (dbError) {
+                            console.error(`Database error inserting similarity results: ${dbError.message}`);
+                        }
+                    }
                     console.log(`AST comparison results saved in ${paths.outputBase}`);
                 } catch (error) {
-                    console.error(`AST comparison failed: ${error.message}`);
+                    console.error(`AST comparison failed: ${String(error)}`);
                 }
             } else {
                 console.log(`Skipping AST comparison: Only ${processedCount} notebook(s) processed successfully.`);

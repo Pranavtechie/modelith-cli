@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { run } from "@utils/kaggle-playwright";
 import chalk from "chalk";
 
+
 export const kaggleDump = new Command()
     .name("kaggle-dump")
     .description("Download kaggle notebooks from a kaggle competition")

@@ -6,6 +6,7 @@ import { init } from "@commands/init"
 import { extract } from "@commands/extract"
 import { evaluate } from "@commands/evaluate"
 import { cohort } from "@commands/cohort"
+import { makeHeatmap } from "@commands/make-heatmap"
 import { kaggleDump } from "@commands/kaggle-dump"
 import { loadEnv } from "@utils/config"
 
@@ -25,10 +26,9 @@ async function main() {
     program.addCommand(evaluate)
     program.addCommand(cohort)
     program.addCommand(kaggleDump)
+    program.addCommand(makeHeatmap)
 
     program.parse()
-
-
 }
 
 

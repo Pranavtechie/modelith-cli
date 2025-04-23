@@ -10,6 +10,7 @@ const ipynbOriginEnum = ["google-colab", "kaggle", "jupyter"] as const;
 export const Run = sqliteTable("Run", {
     runId: text("runId").primaryKey().$defaultFn(() => randomUUIDv7()),
     runHash: text("runHash"),
+    name: text("name"),
     timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
     notebookCount: integer("notebookCount").notNull(),
     cohortId: text("cohortId").references(() => Cohort.cohortId),
@@ -63,7 +64,7 @@ export const Similarity = sqliteTable("Similarity", {
     similarityScore: real("similarityScore").notNull(),
     treeEditDistance: real("treeEditDistance").notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.studentA, table.studentB] }),
+    pk: primaryKey({ columns: [table.studentA, table.studentB, table.runId] }),
 }));
 
 export const Cohort = sqliteTable("Cohort", {

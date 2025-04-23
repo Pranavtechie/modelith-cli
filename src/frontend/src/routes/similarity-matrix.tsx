@@ -4,7 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@frontend/components/ui/button";
 import * as d3 from "d3";
 
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
 
 export const Route = createFileRoute("/similarity-matrix")({
 	component: SimilarityMatrix,
@@ -131,6 +135,7 @@ export default function SimilarityMatrix() {
 	const [hoveredValue, setHoveredValue] = useState<number | null>(null);
 	const sliderRef = useRef<HTMLDivElement>(null);
 
+	// TODO: Here, we're using sample data. I want you to replace the sample data with actual data that can be fetched from the database using prisma-orm. I want you to provide a select dropdown menu that displays the Run names.
 	// Sample data - replace with your actual data
 	const xLabels = [
 		"21BAI1061.ast.json",

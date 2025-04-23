@@ -6,12 +6,12 @@
 	"license": "MIT",
 	"bin": "./cli-dist/index.js",
 	"scripts": {
-		"start": "vite --port 3000",
+		"start": "bun run --bun vite --port 3000",
 		"build:frontend": "bun x --bun vite build",
 		"build:cli": "bun build src/index.ts --outdir cli-dist --target bun --sourcemap --external playwright --external playwright-core --external tree-sitter --external tree-sitter-python",
 		"dev": "bun run src/index.ts",
 		"preview": "bun x --bun vite preview",
-		"generate": "bun x --bun drizzle-kit generate",
+		"generate": "bun x --bun drizzle-kit generate --config drizzle.config.ts",
 		"build": "bun run build:cli && bun run build:frontend"
 	},
 	"packageManager": "bun@latest",

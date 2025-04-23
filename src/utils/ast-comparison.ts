@@ -153,7 +153,7 @@ function compareChildrenEquivalence(children1: AstNode[] | undefined, children2:
  * generates a plot, and stores results in a JSON file.
  * @param folderPath Path to the folder containing .ast.json files
  */
-export async function compareAstsInFolder(folderPath: string): Promise<void> {
+export async function compareAstsInFolder(folderPath: string): Promise<ComparisonResult[]> {
     // Use ora spinner for progress
     const spinner = ora(`Loading ASTs from: ${folderPath}`).start();
     const astMap = loadAstsFromJson(folderPath);
@@ -401,4 +401,6 @@ export async function compareAstsInFolder(folderPath: string): Promise<void> {
     } catch (error) {
         console.error(`Error writing results to file ${resultsFilename}: ${error}`);
     }
+
+    return results;
 }

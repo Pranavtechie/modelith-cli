@@ -32,7 +32,6 @@ async function extractNotebookData(): Promise<NotebookData[]> {
 
 async function filterResponse(response: any) {
     if (response.url() === "https://www.kaggle.com/api/i/kernels.KernelsService/ListKernels") {
-        console.log("FOUND!!")
         response_data.push(await response.json());
     }
 }
@@ -181,7 +180,6 @@ export async function run(download_path: string): Promise<void> {
 
 
         for (const notebook of pendingNotebooks) {
-            console.log(chalk.blue(`Downloading - ${notebook.script_url}`));
 
             const success = await downloadNotebook(page, notebook, download_path, spinner);
 
@@ -215,8 +213,6 @@ export async function run(download_path: string): Promise<void> {
     } else {
         console.log(chalk.green("All notebooks already downloaded! Nothing to download!!"));
     }
-
-    await prompt(chalk.yellow("Press 'Enter' to terminate the browser..."));
 
     context.removeAllListeners();
     await context.close();
