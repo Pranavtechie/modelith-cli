@@ -499,11 +499,18 @@ export default function SimilarityMatrix() {
 	}, [isDraggingLeft, isDraggingRight]);
 
 	const handleCellClick = useCallback((x: number, y: number) => {
+		// Get the studentIds from indices
+		if (!similarityQuery.data?.studentIds) return;
+		
+		const studentIdA = similarityQuery.data.studentIds[y]; // y is the row index
+		const studentIdB = similarityQuery.data.studentIds[x]; // x is the column index
+		
+		// Create encoded parameter with runId and studentIds
 		navigate({
 			to: "/details/$pair",
-			params: { pair: `${x}-${y}` },
+			params: { pair: `${runId}:${studentIdA}:${studentIdB}` },
 		});
-	}, [navigate]);
+	}, [navigate, runId, similarityQuery.data?.studentIds]);
 
 	const renderMatrix = () => (
 		<div className="w-full overflow-x-auto h-full min-h-[800px]">
