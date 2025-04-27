@@ -20,6 +20,8 @@
 		"skipLibCheck": true,
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
+		"forceConsistentCasingInFileNames": true,
+		"esModuleInterop": true,
 
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
@@ -30,6 +32,7 @@
 		"paths": {
 			"@/*": ["src/*"],
 			"@frontend/*": ["src/frontend/src/*"],
+			"@backend/*": ["src/backend/src/*"],
 			"@db/*": ["src/db/*"],
 			"@utils/*": ["src/utils/*"],
 			"@commands/*": ["src/commands/*"]

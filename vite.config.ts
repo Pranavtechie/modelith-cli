@@ -26,10 +26,11 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@frontend': path.resolve(__dirname, 'src/frontend/src/'), // Specific to frontend
-            '@db': path.resolve(__dirname, 'src/db'), // Shared DB access
-            '@utils': path.resolve(__dirname, 'src/utils'), // Shared utilities
-            '@': path.resolve(__dirname, 'src'), // Main Source Folder
+            '@frontend': path.resolve(__dirname, 'src/frontend/src/'),
+            "@backend/*": path.resolve(__dirname, "src/backend/src/*"),
+            '@db': path.resolve(__dirname, 'src/db'),
+            '@utils': path.resolve(__dirname, 'src/utils'),
+            '@': path.resolve(__dirname, 'src'),
         },
     }
 });
