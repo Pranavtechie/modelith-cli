@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Start development servers: `bun run start:dev`
 
 ## Code Style Guidelines
+- Always use `Bun` for any commands or scripts. Never use `npm`
 - TypeScript with strict type checking
 - ESNext target with modern JS features
 - React for frontend components

@@ -1,9 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import type { NotebookContent } from '@frontend/lib/notebook-schemas';
-import MarkdownPreview from '@uiw/react-markdown-preview';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// Dynamic imports for heavy dependencies
+const MarkdownPreview = lazy(() => import('@uiw/react-markdown-preview'));
+const SyntaxHighlighterModule = lazy(() => 
+  import('react-syntax-highlighter').then(module => ({ 
+    default: module.Prism 
+  }))
+);
+const tomorrowStylePromise = import('react-syntax-highlighter/dist/esm/styles/prism').then(module => module.tomorrow);
 
 interface NotebookViewerProps {
   notebookContent: NotebookContent | null;
@@ -71,11 +77,21 @@ const NotebookViewer: React.FC<NotebookViewerProps> = ({ notebookContent, title,
     return (
       <div key={`md-${index}`} className="notebook-cell markdown-cell">
         <div className="cell-content markdown-content">
-          <MarkdownPreview source={content} />
+          <Suspense fallback={<div className="p-2 bg-gray-100">Loading markdown...</div>}>
+            <MarkdownPreview source={content} />
+          </Suspense>
         </div>
       </div>
     );
   };
+
+  // State to store the loaded style
+  const [tomorrowStyle, setTomorrowStyle] = useState<any>(null);
+  
+  // Load the style when the component mounts
+  useEffect(() => {
+    tomorrowStylePromise.then(style => setTomorrowStyle(style));
+  }, []);
 
   // Render code cell
   const renderCodeCell = (cell: any, index: number) => {
@@ -90,13 +106,19 @@ const NotebookViewer: React.FC<NotebookViewerProps> = ({ notebookContent, title,
       <div key={`code-${index}`} className="notebook-cell code-cell">
         <div className="cell-number">[{cell.execution_count ?? ' '}]:</div>
         <div className="cell-content code-content">
-          <SyntaxHighlighter 
-            language="python" 
-            style={tomorrow}
-            customStyle={{ margin: 0, padding: '1rem', borderRadius: 0 }}
-          >
-            {source}
-          </SyntaxHighlighter>
+          <Suspense fallback={<div className="p-2 bg-gray-100">Loading code highlighting...</div>}>
+            {tomorrowStyle ? (
+              <SyntaxHighlighterModule 
+                language="python" 
+                style={tomorrowStyle}
+                customStyle={{ margin: 0, padding: '1rem', borderRadius: 0 }}
+              >
+                {source}
+              </SyntaxHighlighterModule>
+            ) : (
+              <pre className="p-3 bg-gray-800 text-white">{source}</pre>
+            )}
+          </Suspense>
         </div>
         
         {/* Display cell ID if available */}

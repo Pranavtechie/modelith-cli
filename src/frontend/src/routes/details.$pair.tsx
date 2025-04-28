@@ -28,7 +28,7 @@ import {
   TabsTrigger,
 } from "@frontend/components/ui/tabs";
 
-import NotebookViewer from "@frontend/components/NotebookViewer";
+const NotebookViewer = React.lazy(() => import("@frontend/components/NotebookViewer"));
 import { extractAndValidateNotebook } from '@frontend/lib/notebook-schemas';
 
 // Define the route parameter structure
@@ -200,16 +200,20 @@ function DetailsPage() {
     
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <NotebookViewer 
-          notebookContent={notebookA}
-          title={`Notebook A`}
-          studentName={studentAName}
-        />
-        <NotebookViewer 
-          notebookContent={notebookB}
-          title={`Notebook B`}
-          studentName={studentBName}
-        />
+        <React.Suspense fallback={<div className="p-4 text-center">Loading notebook A...</div>}>
+          <NotebookViewer 
+            notebookContent={notebookA}
+            title={`Notebook A`}
+            studentName={studentAName}
+          />
+        </React.Suspense>
+        <React.Suspense fallback={<div className="p-4 text-center">Loading notebook B...</div>}>
+          <NotebookViewer 
+            notebookContent={notebookB}
+            title={`Notebook B`}
+            studentName={studentBName}
+          />
+        </React.Suspense>
       </div>
     );
   };
