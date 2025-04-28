@@ -12,7 +12,11 @@ function verifyDatabaseSchema() {
   const spinner = ora("Verifying database schema...").start(); // Start spinner
   const db = drizzle(new Database(dbPath));
   try {
-    migrate(db, { migrationsFolder: "./drizzle" });
+    // Check if we're running from the installed package or development
+    const isInstalledPackage = !process.argv[1].includes("src");
+    const migrationsPath = isInstalledPackage ? `${__dirname}/../../drizzle` : "./drizzle";
+    
+    migrate(db, { migrationsFolder: migrationsPath });
     spinner.succeed("Database Schema up to date"); // Succeed spinner
   } catch (error) {
     spinner.fail("Migration failed"); // Fail spinner
@@ -126,60 +130,13 @@ function asciiArt() {
 `);
 }
 
-async function ensureBunVersion() {
-  const spinner = ora("Ensuring Bun version matches package.json...").start(); // Start spinner
-  try {
-    const packageJson = JSON.parse(readFileSync("./package.json", "utf-8")); // Read package.json
-    const requiredVersion = packageJson.packageManager.split("@")[1]; // Extract version from packageManager field
-
-    const versionProcess = Bun.spawn(["bun", "--version"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const versionOutput = await new Response(versionProcess.stdout).text();
-    const currentVersion = versionOutput.trim();
-
-    if (currentVersion === requiredVersion) {
-      spinner.succeed(
-        `Bun is already at the required version: ${requiredVersion}`,
-      ); // Succeed spinner
-    } else {
-      spinner.warn(
-        `Current Bun version (${currentVersion}) does not match required version (${requiredVersion}). Upgrading...`,
-      );
-      const upgradeProcess = Bun.spawn(
-        ["bun", "install", `--version=${requiredVersion}`],
-        {
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      );
-      const exitCode = await upgradeProcess.exited;
-      if (exitCode === 0) {
-        spinner.succeed(
-          `Bun upgraded to version ${requiredVersion} successfully.`,
-        ); // Succeed spinner
-      } else {
-        const stderr = await new Response(upgradeProcess.stderr).text();
-        spinner.fail(
-          `Failed to upgrade Bun to version ${requiredVersion}: ${stderr}`,
-        ); // Fail spinner
-      }
-    }
-  } catch (error) {
-    spinner.fail(
-      `Unexpected error while ensuring Bun version: ${String(error)}`,
-    ); // Fail spinner
-  }
-}
-
 export const init = new Command()
   .name("init")
   .description("Initialize your project and install dependencies")
   .action(async () => {
     // Check if we're in a CI environment
-    const isCI = process.env.CI === 'true';
-    
+    const isCI = process.env.CI === "true";
+
     if (!isCI) {
       asciiArt();
     }
@@ -188,8 +145,6 @@ export const init = new Command()
     const isBuiltPackage = !process.argv[1].includes("src");
 
     if (!isCI) {
-      await ensureBunVersion(); // Ensure Bun version matches package.json
-
       const configSpinner = ora("Verifying config file...").start(); // Start config spinner
       let configStatus = await verifyConfigFile();
 
@@ -202,7 +157,9 @@ export const init = new Command()
       try {
         verifyDatabaseSchema();
       } catch (error) {
-        console.warn("Could not verify database schema. This is normal in CI environments.");
+        console.warn(
+          "Could not verify database schema. This is normal in CI environments.",
+        );
       }
 
       // Only check for playwright if it's set as an optional dependency

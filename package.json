@@ -2,7 +2,7 @@
   "name": "modelith",
   "module": "src/index.ts",
   "type": "module",
-  "version": "0.1.8",
+  "version": "0.2.2",
   "license": "MIT",
   "bin": "./cli-dist/index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "packageManager": "bun@1.2.10",
   "files": [
-    "drizzle",
+    "drizzle/**/*",
     "cli-dist",
     "backend-dist",
     "dist",
