@@ -11,15 +11,15 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SimilarityMatrixImport } from './routes/similarity-matrix'
+import { Route as SecondIndexImport } from './routes/second-index'
 import { Route as IndexImport } from './routes/index'
 import { Route as DetailsPairImport } from './routes/details.$pair'
 
 // Create/Update Routes
 
-const SimilarityMatrixRoute = SimilarityMatrixImport.update({
-  id: '/similarity-matrix',
-  path: '/similarity-matrix',
+const SecondIndexRoute = SecondIndexImport.update({
+  id: '/second-index',
+  path: '/second-index',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -46,11 +46,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/similarity-matrix': {
-      id: '/similarity-matrix'
-      path: '/similarity-matrix'
-      fullPath: '/similarity-matrix'
-      preLoaderRoute: typeof SimilarityMatrixImport
+    '/second-index': {
+      id: '/second-index'
+      path: '/second-index'
+      fullPath: '/second-index'
+      preLoaderRoute: typeof SecondIndexImport
       parentRoute: typeof rootRoute
     }
     '/details/$pair': {
@@ -67,41 +67,41 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/similarity-matrix': typeof SimilarityMatrixRoute
+  '/second-index': typeof SecondIndexRoute
   '/details/$pair': typeof DetailsPairRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/similarity-matrix': typeof SimilarityMatrixRoute
+  '/second-index': typeof SecondIndexRoute
   '/details/$pair': typeof DetailsPairRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/similarity-matrix': typeof SimilarityMatrixRoute
+  '/second-index': typeof SecondIndexRoute
   '/details/$pair': typeof DetailsPairRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/similarity-matrix' | '/details/$pair'
+  fullPaths: '/' | '/second-index' | '/details/$pair'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/similarity-matrix' | '/details/$pair'
-  id: '__root__' | '/' | '/similarity-matrix' | '/details/$pair'
+  to: '/' | '/second-index' | '/details/$pair'
+  id: '__root__' | '/' | '/second-index' | '/details/$pair'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SimilarityMatrixRoute: typeof SimilarityMatrixRoute
+  SecondIndexRoute: typeof SecondIndexRoute
   DetailsPairRoute: typeof DetailsPairRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SimilarityMatrixRoute: SimilarityMatrixRoute,
+  SecondIndexRoute: SecondIndexRoute,
   DetailsPairRoute: DetailsPairRoute,
 }
 
@@ -116,15 +116,15 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/similarity-matrix",
+        "/second-index",
         "/details/$pair"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/similarity-matrix": {
-      "filePath": "similarity-matrix.tsx"
+    "/second-index": {
+      "filePath": "second-index.tsx"
     },
     "/details/$pair": {
       "filePath": "details.$pair.tsx"

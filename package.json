@@ -8,19 +8,22 @@
   "scripts": {
     "start": "bun run --bun vite --port 3000",
     "build:frontend": "bun x --bun vite build",
-    "build:cli": "bun build src/index.ts --outdir cli-dist --target bun --sourcemap --external playwright --external playwright-core --external tree-sitter --external tree-sitter-python",
+    "build:cli": "bun build src/index.ts --outdir cli-dist --target bun --sourcemap --external playwright --external playwright-core --external tree-sitter --external tree-sitter-python --external exiftool-vendored",
+    "build:backend": "bun build src/backend/src/index.ts --outdir backend-dist --target bun --sourcemap",
     "dev": "bun run src/index.ts",
     "start:backend": "bun run src/backend/src/index.ts",
     "start:frontend": "bun run --bun vite --port 3000",
     "start:dev": "concurrently \"bun run start:backend\" \"bun run start:frontend\"",
     "preview": "bun x --bun vite preview",
     "generate": "bun x --bun drizzle-kit generate --config drizzle.config.ts",
-    "build": "bun run build:cli && bun run build:frontend"
+    "build": "bun run build:cli && bun run build:frontend && bun run build:backend",
+    "postinstall": "bun run init"
   },
   "packageManager": "bun@1.2.10",
   "files": [
     "drizzle",
     "cli-dist",
+    "backend-dist",
     "dist",
     "bun.lock",
     "package.json",
@@ -106,5 +109,9 @@
     "sharp",
     "tree-sitter",
     "tree-sitter-python"
-  ]
+  ],
+  "optionalDependencies": {
+    "playwright": "^1.51.1",
+    "exiftool-vendored": "^29.3.0"
+  }
 }

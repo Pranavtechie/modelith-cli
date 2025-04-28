@@ -6,6 +6,7 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
 import { chromium } from 'playwright';
 import { readFileSync } from 'fs'; // Import fs to read package.json
+import { existsSync } from 'fs';
 
 
 function verifyDatabaseSchema() {
@@ -42,6 +43,36 @@ async function checkAndSetupPlaywright() {
     }
 }
 
+async function checkForServe() {
+    const spinner = ora('Checking for serve package...').start(); // Start spinner
+    try {
+        const process = Bun.spawn(['npx', 'serve', '--version'], {
+            stdout: 'pipe',
+            stderr: 'pipe'
+        });
+        const exitCode = await process.exited;
+        
+        if (exitCode === 0) {
+            spinner.succeed('Serve package is available'); // Succeed spinner
+        } else {
+            spinner.warn('Serve package not found. Installing globally...');
+            const installProcess = Bun.spawn(['npm', 'install', '-g', 'serve'], {
+                stdout: 'pipe',
+                stderr: 'pipe'
+            });
+            const installExitCode = await installProcess.exited;
+            if (installExitCode === 0) {
+                spinner.succeed('Serve package installed successfully'); // Succeed spinner
+            } else {
+                const stderr = await new Response(installProcess.stderr).text();
+                spinner.fail(`Failed to install serve package: ${stderr}`); // Fail spinner
+            }
+        }
+    } catch (error) {
+        spinner.fail(`Error checking for serve package: ${String(error)}`); // Fail spinner
+    }
+}
+
 async function buildFrontend() {
     const spinner = ora('Building frontend with Vite...').start(); // Start spinner
     try {
@@ -58,6 +89,25 @@ async function buildFrontend() {
         }
     } catch (error) {
         spinner.fail(`Unexpected error during frontend build: ${String(error)}`); // Fail spinner
+    }
+}
+
+async function buildBackend() {
+    const spinner = ora('Building backend...').start(); // Start spinner
+    try {
+        const buildProcess = Bun.spawn(['bun', 'run', 'build:backend'], {
+            stdout: 'pipe', // Pipe output to handle it
+            stderr: 'pipe'
+        });
+        const exitCode = await buildProcess.exited;
+        if (exitCode === 0) {
+            spinner.succeed('Backend built successfully.'); // Succeed spinner
+        } else {
+            const stderr = await new Response(buildProcess.stderr).text();
+            spinner.fail(`Backend build failed: ${stderr}`); // Fail spinner
+        }
+    } catch (error) {
+        spinner.fail(`Unexpected error during backend build: ${String(error)}`); // Fail spinner
     }
 }
 
@@ -127,7 +177,21 @@ export const init = new Command()
 
         verifyDatabaseSchema();
 
-        await checkAndSetupPlaywright();
+        // Check if we're running from an installed package
+        const isBuiltPackage = !process.argv[1].includes('src');
+        
+        // Only check for playwright if it's set as an optional dependency
+        if (existsSync('./node_modules/playwright')) {
+            await checkAndSetupPlaywright();
+        } else if (!isBuiltPackage) {
+            console.log('Playwright not installed. You can install it separately with: npm install playwright');
+        }
 
-        await buildFrontend();
+        await checkForServe();
+
+        // Build front and backend if we're in development environment
+        if (!isBuiltPackage) {
+            await buildFrontend();
+            await buildBackend();
+        }
     });

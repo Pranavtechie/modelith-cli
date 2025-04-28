@@ -6,6 +6,7 @@ out
 dist
 dist-ssr
 cli-dist
+backend-dist
 *.tgz
 
 # code coverage
