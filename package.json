@@ -16,8 +16,7 @@
     "start:dev": "concurrently \"bun run start:backend\" \"bun run start:frontend\"",
     "preview": "bun x --bun vite preview",
     "generate": "bun x --bun drizzle-kit generate --config drizzle.config.ts",
-    "build": "bun run build:cli && bun run build:frontend && bun run build:backend",
-    "postinstall": "bun run init"
+    "build": "bun run build:cli && bun run build:frontend && bun run build:backend"
   },
   "packageManager": "bun@1.2.10",
   "files": [
