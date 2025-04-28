@@ -32,6 +32,11 @@ jobs:
             echo "Missing build artifacts!" && exit 1
           fi
       
+      - name: Login to npm
+        run: bunx npm login
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
       - name: Publish to npm
         run: bun publish
         env:
