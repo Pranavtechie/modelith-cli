@@ -9,16 +9,29 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+      
       - name: Install Dependencies
         run: bun install
-      - name: Build CLI
-        run: bun run build:cli
-      - name: Build Frontend
-        run: bun run build:frontend
+      
+      - name: Build Package
+        run: bun run build
+        # This runs all build steps (CLI, frontend, and backend)
+      
+      - name: Verify Build Artifacts
+        run: |
+          if [ ! -d "cli-dist" ] || [ ! -d "dist" ] || [ ! -d "backend-dist" ]; then
+            echo "Missing build artifacts!" && exit 1
+          fi
+      
       - name: Publish to npm
         run: bun publish
         env:
