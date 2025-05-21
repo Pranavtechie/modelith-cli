@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import ora from "ora"; // Import ora
 import { dbPath, verifyConfigFile } from "@/utils/config";
+import { resolve } from "path";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
@@ -14,7 +15,9 @@ function verifyDatabaseSchema() {
   try {
     // Check if we're running from the installed package or development
     const isInstalledPackage = !process.argv[1].includes("src");
-    const migrationsPath = isInstalledPackage ? `${__dirname}/../../drizzle` : "./drizzle";
+    let migrationsPath = isInstalledPackage ? `${__dirname}/../../drizzle` : "./drizzle";
+    // Ensure the path is absolute
+    migrationsPath = resolve(migrationsPath);
     
     migrate(db, { migrationsFolder: migrationsPath });
     spinner.succeed("Database Schema up to date"); // Succeed spinner
@@ -46,36 +49,6 @@ async function checkAndSetupPlaywright() {
       const stderr = await new Response(installProcess.stderr).text();
       spinner.fail(`Chromium installation failed: ${stderr}`); // Fail if installation fails
     }
-  }
-}
-
-async function checkForServe() {
-  const spinner = ora("Checking for serve package...").start(); // Start spinner
-  try {
-    const process = Bun.spawn(["npx", "serve", "--version"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const exitCode = await process.exited;
-
-    if (exitCode === 0) {
-      spinner.succeed("Serve package is available"); // Succeed spinner
-    } else {
-      spinner.warn("Serve package not found. Installing globally...");
-      const installProcess = Bun.spawn(["bun", "install", "-g", "serve"], {
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const installExitCode = await installProcess.exited;
-      if (installExitCode === 0) {
-        spinner.succeed("Serve package installed successfully"); // Succeed spinner
-      } else {
-        const stderr = await new Response(installProcess.stderr).text();
-        spinner.fail(`Failed to install serve package: ${stderr}`); // Fail spinner
-      }
-    }
-  } catch (error) {
-    spinner.fail(`Error checking for serve package: ${String(error)}`); // Fail spinner
   }
 }
 
@@ -162,16 +135,28 @@ export const init = new Command()
         );
       }
 
-      // Only check for playwright if it's set as an optional dependency
-      if (existsSync("./node_modules/playwright")) {
-        await checkAndSetupPlaywright();
-      } else if (!isBuiltPackage) {
-        console.log(
-          "Playwright not installed. You can install it separately with: bun -g install playwright",
-        );
+      let playwrightAvailable = false;
+      try {
+        await import("playwright");
+        playwrightAvailable = true;
+      } catch (e) {
+        // Playwright not available
       }
 
-      await checkForServe();
+      if (playwrightAvailable) {
+        await checkAndSetupPlaywright();
+      } else {
+        // Handle case where Playwright (the package) is not installed
+        if (isBuiltPackage) {
+          console.log(
+            "Playwright (optional dependency) was not installed with Modelith. If you need features requiring Playwright, please try installing it manually: bun install -g playwright",
+          );
+        } else {
+          console.log(
+            "Playwright is not installed in your local project. If you need features requiring Playwright, consider adding it to your project or installing it globally.",
+          );
+        }
+      }
     } else {
       console.log("Running in CI environment, skipping environment checks.");
     }

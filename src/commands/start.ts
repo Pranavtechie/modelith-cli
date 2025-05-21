@@ -71,7 +71,9 @@ export const start = new Command()
                 let frontendProcess;
                 if (isBuiltPackage) {
                     // We're running from the installed CLI
-                    frontendProcess = spawn('npx', ['serve', '-s', frontendPath, '-p', frontendPort], {
+                    // Use vite preview to serve the frontend
+                    const viteRootPath = path.resolve(frontendPath, '..');
+                    frontendProcess = spawn('bun', ['x', '--bun', 'vite', 'preview', '--root', viteRootPath, '--port', frontendPort, '--host', '0.0.0.0'], {
                         stdio: 'inherit'
                     });
                 } else {
