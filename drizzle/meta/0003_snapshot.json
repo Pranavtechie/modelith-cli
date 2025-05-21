@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d4d0fef6-23ae-41a1-bafb-6375debc3a63",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "2633b862-9f5d-464b-a699-ce5e12668a6f",
+  "prevId": "49989458-8ee2-4b23-b622-107d6f3a6619",
   "tables": {
     "Cohort": {
       "name": "Cohort",
@@ -19,6 +19,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         }
       },
@@ -408,15 +415,15 @@
           "notNull": false,
           "autoincrement": false
         },
-        "fileA": {
-          "name": "fileA",
+        "studentA": {
+          "name": "studentA",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "fileB": {
-          "name": "fileB",
+        "studentB": {
+          "name": "studentB",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -451,15 +458,41 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "Similarity_studentA_Student_studentId_fk": {
+          "name": "Similarity_studentA_Student_studentId_fk",
+          "tableFrom": "Similarity",
+          "tableTo": "Student",
+          "columnsFrom": [
+            "studentA"
+          ],
+          "columnsTo": [
+            "studentId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "Similarity_studentB_Student_studentId_fk": {
+          "name": "Similarity_studentB_Student_studentId_fk",
+          "tableFrom": "Similarity",
+          "tableTo": "Student",
+          "columnsFrom": [
+            "studentB"
+          ],
+          "columnsTo": [
+            "studentId"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "Similarity_fileA_fileB_pk": {
+        "Similarity_studentA_studentB_pk": {
           "columns": [
-            "fileA",
-            "fileB"
+            "studentA",
+            "studentB"
           ],
-          "name": "Similarity_fileA_fileB_pk"
+          "name": "Similarity_studentA_studentB_pk"
         }
       },
       "uniqueConstraints": {},
@@ -479,7 +512,7 @@
           "name": "cohortId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "name": {
@@ -497,7 +530,16 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "unique_regNo_cohort": {
+          "name": "unique_regNo_cohort",
+          "columns": [
+            "regNo",
+            "cohortId"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "Student_cohortId_Cohort_cohortId_fk": {
           "name": "Student_cohortId_Cohort_cohortId_fk",
