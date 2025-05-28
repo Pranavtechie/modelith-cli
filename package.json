@@ -7,7 +7,7 @@
   "bin": "./cli-dist/index.js",
   "scripts": {
     "start": "bun run --bun vite --port 3000",
-    "build:frontend": "bun x --bun vite build",
+    "build:frontend": "bun run vite build",
     "build:cli": "bun build src/index.ts src/utils/ast-worker.ts src/utils/ast-comparison.ts --outdir cli-dist --target bun --sourcemap --external playwright --external playwright-core --external tree-sitter --external tree-sitter-python --external exiftool-vendored --external jsdom --external svg2img",
     "build:backend": "bun build src/backend/src/index.ts --outdir backend-dist --target bun --sourcemap",
     "dev": "bun run src/index.ts",

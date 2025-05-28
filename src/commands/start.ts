@@ -20,14 +20,14 @@ export const start = new Command()
         const backendPort = options.backendPort;
         
         // Get paths relative to this file location
-        const backendPath = path.resolve(__dirname, '../../backend-dist/index.js');
-        const frontendPath = path.resolve(__dirname, '../../dist');
+        const backendPath = path.resolve(__dirname, '../backend-dist/index.js');
+        const frontendPath = path.resolve(__dirname, '../dist');
         
         if (startBackend) {
             const backendSpinner = ora('Starting backend server...').start();
             try {
                 // Use different approach based on whether we're running the built version or in dev
-                const isBuiltPackage = !process.argv[1].includes('src');
+                const isBuiltPackage = !process.argv[1]?.includes('src');
                 
                 let backendProcess;
                 if (isBuiltPackage) {
@@ -43,7 +43,7 @@ export const start = new Command()
                         env: {
                             ...process.env,
                             PORT: backendPort
-                        },
+                        } as unknown as NodeJS.ProcessEnv,
                         stdio: 'inherit'
                     });
                 }
@@ -66,14 +66,13 @@ export const start = new Command()
             const frontendSpinner = ora('Starting frontend server...').start();
             try {
                 // Use different approach based on whether we're running the built version or in dev
-                const isBuiltPackage = !process.argv[1].includes('src');
+                const isBuiltPackage = !process.argv[1]?.includes('src');
                 
                 let frontendProcess;
                 if (isBuiltPackage) {
                     // We're running from the installed CLI
-                    // Use vite preview to serve the frontend
-                    const viteRootPath = path.resolve(frontendPath, '..');
-                    frontendProcess = spawn('bun', ['x', '--bun', 'vite', 'preview', '--root', viteRootPath, '--port', frontendPort, '--host', '0.0.0.0'], {
+                    // Serve static build using 'serve'
+                    frontendProcess = spawn('bun', ['x', '--bun', 'serve', '-s', frontendPath, '-l', frontendPort], {
                         stdio: 'inherit'
                     });
                 } else {
@@ -82,7 +81,7 @@ export const start = new Command()
                         env: {
                             ...process.env,
                             PORT: frontendPort
-                        },
+                        } as unknown as NodeJS.ProcessEnv,
                         stdio: 'inherit'
                     });
                 }
