@@ -6,16 +6,13 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
 import { chromium } from "playwright";
-import { readFileSync } from "fs"; // Import fs to read package.json
-import { existsSync } from "fs";
 
 function verifyDatabaseSchema() {
   const spinner = ora("Verifying database schema...").start(); // Start spinner
   const db = drizzle(new Database(dbPath));
   try {
-    // Check if we're running from the installed package or development
-    const isInstalledPackage = !process.argv[1].includes("src");
-    let migrationsPath = isInstalledPackage ? `${__dirname}/../../drizzle` : "./drizzle";
+    let migrationsPath = "./drizzle";
+    console.log(migrationsPath);
     // Ensure the path is absolute
     migrationsPath = resolve(migrationsPath);
     
@@ -115,7 +112,7 @@ export const init = new Command()
     }
 
     // Check if we're running from an installed package
-    const isBuiltPackage = !process.argv[1].includes("src");
+    const isBuiltPackage = !process.argv[1]?.includes("src");
 
     if (!isCI) {
       const configSpinner = ora("Verifying config file...").start(); // Start config spinner
