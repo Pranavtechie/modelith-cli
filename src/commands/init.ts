@@ -12,12 +12,16 @@ function verifyDatabaseSchema() {
   const spinner = ora("Verifying database schema...").start(); // Start spinner
   const db = drizzle(new Database(dbPath));
   try {
-    // Resolve path to the drizzle folder relative to the current module's directory
-    // Assuming init.ts (or its compiled version) is at a path like [package_root]/cli-dist/commands/init.js
-    // and the 'drizzle' folder is at [package_root]/drizzle
+    // Determine migrations folder path, supporting both development and built layouts
     const currentModuleDir = import.meta.dirname;
-    let migrationsPath = resolve(currentModuleDir, "../../drizzle");
-    // console.log(`[DEBUG] Attempting to use migrations path: ${migrationsPath}`); // Optional: for debugging
+    const candidatePaths = [
+      resolve(currentModuleDir, "../drizzle"),
+      resolve(currentModuleDir, "../../drizzle"),
+    ];
+    const migrationsPath = candidatePaths.find(fs.existsSync);
+    if (!migrationsPath) {
+      throw new Error(`Could not locate the migrations folder. Tried: ${candidatePaths.join(', ')}`);
+    }
 
     migrate(db, { migrationsFolder: migrationsPath });
     spinner.succeed("Database Schema up to date"); // Succeed spinner
