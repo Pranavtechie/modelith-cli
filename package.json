@@ -2,7 +2,7 @@
   "name": "modelith",
   "module": "src/index.ts",
   "type": "module",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "license": "MIT",
   "bin": "./cli-dist/index.js",
   "scripts": {
