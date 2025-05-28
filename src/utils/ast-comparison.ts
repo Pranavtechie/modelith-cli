@@ -206,13 +206,20 @@ export async function compareAstsInFolder(folderPath: string): Promise<Compariso
     let tasksCompleted = 0;
     const totalTasks = tasks.length;
 
-    const workerScriptPath = join(__dirname, 'ast-worker.ts'); // Resolve worker script path
+    // Determine worker script path for dev (TS) vs bundled (JS)
+    const workerScriptUrl = (() => {
+        const url = import.meta.url;
+        const suffix = url.endsWith('.ts')
+            ? './ast-worker.ts'
+            : './utils/ast-worker.js';
+        return new URL(suffix, url).href;
+    })();
 
     // Buffer for errors and worker messages
     const workerErrors: string[] = [];
 
     for (let i = 0; i < numWorkers; i++) {
-        const worker = new Worker(workerScriptPath);
+        const worker = new Worker(workerScriptUrl);
         workers.push(worker);
 
         const promise = new Promise<void>((resolve, reject) => {
@@ -383,7 +390,7 @@ export async function compareAstsInFolder(folderPath: string): Promise<Compariso
                 return;
             }
             try {
-                Bun.write('ast_similarity_heatmap.png', buffer);
+                fs.writeFileSync('ast_similarity_heatmap.png', buffer);
                 spinner.succeed("Heatmap saved as ast_similarity_heatmap.png");
             } catch (writeError) {
                 spinner.fail(`Error writing PNG file: ${writeError}`);
@@ -396,7 +403,7 @@ export async function compareAstsInFolder(folderPath: string): Promise<Compariso
     // Store results in a JSON file
     const resultsFilename = "ast_comparison_results.json";
     try {
-        Bun.write(resultsFilename, JSON.stringify(results, null, 2));
+        fs.writeFileSync(resultsFilename, JSON.stringify(results, null, 2));
         console.log(`AST comparison complete. Results stored in ${resultsFilename}`);
     } catch (error) {
         console.error(`Error writing results to file ${resultsFilename}: ${error}`);
