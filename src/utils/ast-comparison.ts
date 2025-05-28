@@ -164,7 +164,7 @@ export async function compareAstsInFolder(folderPath: string): Promise<Compariso
 
     if (numAsts < 2) {
         spinner.fail("Need at least two AST files for comparison.");
-        return;
+        return [];
     }
 
     // Initialize matrices
