@@ -6,46 +6,92 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
 import { chromium } from "playwright";
+import fs from "node:fs"; // Added fs import
 
 function verifyDatabaseSchema() {
   const spinner = ora("Verifying database schema...").start(); // Start spinner
   const db = drizzle(new Database(dbPath));
   try {
-    let migrationsPath = "./drizzle";
-    console.log(migrationsPath);
-    // Ensure the path is absolute
-    migrationsPath = resolve(migrationsPath);
-    
+    // Resolve path to the drizzle folder relative to the current module's directory
+    // Assuming init.ts (or its compiled version) is at a path like [package_root]/cli-dist/commands/init.js
+    // and the 'drizzle' folder is at [package_root]/drizzle
+    const currentModuleDir = import.meta.dirname;
+    let migrationsPath = resolve(currentModuleDir, "../../drizzle");
+    // console.log(`[DEBUG] Attempting to use migrations path: ${migrationsPath}`); // Optional: for debugging
+
     migrate(db, { migrationsFolder: migrationsPath });
     spinner.succeed("Database Schema up to date"); // Succeed spinner
   } catch (error) {
     spinner.fail("Migration failed"); // Fail spinner
-    console.error(error);
+    console.error(error); // Log the full error for details
   }
 }
 
 async function checkAndSetupPlaywright() {
-  const spinner = ora("Checking Playwright setup...").start(); // Start spinner
+  const spinner = ora("Checking Playwright setup...").start();
+  let playwrightChromiumPath: string | null = null;
+
   try {
-    const browser = await chromium.launch();
-    await browser.close();
-    spinner.succeed("Playwright with Chromium is installed."); // Succeed spinner
-  } catch (error) {
-    spinner.warn("Playwright not installed correctly. Installing Chromium..."); // Use warn for installation step
-    const installProcess = Bun.spawn(
-      ["bun", "x", "--bun", "playwright", "install", "chromium"],
-      {
-        stdout: "pipe", // Pipe output to handle it
-        stderr: "pipe",
-      },
-    );
-    const exitCode = await installProcess.exited;
-    if (exitCode === 0) {
-      spinner.succeed("Chromium installed successfully."); // Succeed after installation
-    } else {
-      const stderr = await new Response(installProcess.stderr).text();
-      spinner.fail(`Chromium installation failed: ${stderr}`); // Fail if installation fails
+    playwrightChromiumPath = chromium.executablePath();
+  } catch (e) {
+    // This can happen if Playwright itself is not correctly installed or its config is broken
+    spinner.warn("Playwright cannot determine Chromium executable path. Will attempt installation.");
+  }
+
+  if (playwrightChromiumPath && fs.existsSync(playwrightChromiumPath)) {
+    spinner.succeed(`Playwright Chromium executable found at: ${playwrightChromiumPath}. Verifying launch...`);
+    try {
+      // Still good to do a quick launch test even if executable exists
+      const browser = await chromium.launch({ headless: true });
+      await browser.close();
+      spinner.succeed("Playwright with Chromium is installed and verified.");
+      return; // Exit if already set up and verified
+    } catch (launchError) {
+      spinner.warn(`Chromium executable found, but launch failed: ${(launchError as Error).message}. Proceeding to installation/reinstallation.`);
     }
+  } else if (playwrightChromiumPath) {
+    spinner.warn(`Playwright Chromium executable expected at ${playwrightChromiumPath} but not found. Attempting to install...`);
+  } else {
+    spinner.warn("Playwright Chromium setup not found. Attempting to install...");
+  }
+
+  // If we've reached here, either the path wasn't found, file didn't exist, or initial launch failed.
+  console.log("INFO: Running 'playwright install chromium'. This may take a few minutes.");
+  spinner.text = "Installing Playwright Chromium browser..."; // Update spinner text
+
+  const installProcess = Bun.spawn(
+    ["bun", "x", "--bun", "playwright", "install", "chromium"],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+
+  const stdoutPromise = new Response(installProcess.stdout).text();
+  const stderrPromise = new Response(installProcess.stderr).text();
+
+  const exitCode = await installProcess.exited;
+  const stdout = await stdoutPromise;
+  const stderr = await stderrPromise;
+
+  if (exitCode === 0) {
+    spinner.succeed("Playwright Chromium browser installed successfully.");
+    const verifySpinner = ora("Verifying Playwright/Chromium after installation...").start();
+    try {
+      const browser = await chromium.launch({ headless: true });
+      await browser.close();
+      verifySpinner.succeed("Playwright with Chromium is now operational.");
+    } catch (postInstallError) {
+      verifySpinner.fail(`Chromium installed, but Playwright still failed to launch: ${(postInstallError as Error).message}. Installation stdout: ${stdout || 'empty'}. Installation stderr: ${stderr || 'empty'}`);
+    }
+  } else {
+    spinner.fail(
+      `Playwright Chromium installation failed (exit code: ${exitCode}).
+` +
+      `Stdout: ${stdout || "(empty)"}
+` +
+      `Stderr: ${stderr || "(empty)"}`
+    );
   }
 }
 
