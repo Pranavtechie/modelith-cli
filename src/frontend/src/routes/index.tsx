@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
+} from "@floating-ui/react";
 import { Button } from "@frontend/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+  TooltipProvider
 } from "@frontend/components/ui/tooltip";
-import {
-  useFloating,
-  offset,
-  shift,
-  flip,
-  autoUpdate,
-} from "@floating-ui/react";
 import * as d3 from "d3";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "../main";
 
 import {
@@ -423,6 +422,7 @@ export default function SimilarityMatrix() {
   const xLabels = similarityQuery.data?.students || [];
   const yLabels = similarityQuery.data?.students || [];
   const data = similarityQuery.data?.data || [];
+  const defaulters = similarityQuery.data?.defaulters || [];
 
   // Calculate gradient colors based on slider positions
   const getBackgroundStyle = () => {
@@ -724,6 +724,24 @@ export default function SimilarityMatrix() {
     updateSearchParams({ runId: newRunId });
   };
 
+  // Defaulters widget
+  const renderDefaulters = () => {
+    if (!defaulters.length) return null;
+    return (
+      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="font-semibold text-red-700 mb-2">Defaulters (No Submission)</div>
+        <ul className="list-disc pl-6">
+          {defaulters.map((s: any) => (
+            <li key={s.studentId} className="text-red-800">
+              <span className="font-mono">{s.regNo || s.studentId}</span>
+              {s.name ? ` - ${s.name}` : ""}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-[95%] lg:max-w-[90%] xl:max-w-[1600px] mx-auto p-4 md:p-8 space-y-6">
       {/* Selection section */}
@@ -880,6 +898,7 @@ export default function SimilarityMatrix() {
 
       {/* Content */}
       <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg min-h-[850px]">
+        {renderDefaulters()}
         {cohortsQuery.isError ? (
           <div className="text-center p-12 text-red-500">
             Error loading cohorts: {cohortsQuery.error.message}

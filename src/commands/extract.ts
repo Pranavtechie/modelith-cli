@@ -1,19 +1,19 @@
-import { analyzeFilenames } from "@utils/sanitize-filenames";
-import { type SanitizationResult, type NotebookMetadataObject } from '@utils/types'; // Updated to use refactored type
+import { db } from "@db/client";
+import { NotebookMetadata, Run, Similarity, Student } from "@db/schema";
+import { compareAstsInFolder } from "@utils/ast-comparison";
 import { generateFolderHash } from "@utils/folder-hash";
 import { NotebookAnalyzer } from "@utils/NotebookAnalyzer";
-import { db } from "@db/client";
-import { Run, NotebookMetadata, Student, Similarity } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { compareAstsInFolder } from "@utils/ast-comparison";
-import { mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { analyzeFilenames } from "@utils/sanitize-filenames";
+import { type NotebookMetadataObject, type SanitizationResult } from '@utils/types'; // Updated to use refactored type
 import { randomUUIDv7 } from "bun";
-import { Command } from "commander";
-import { selectCohort } from "../utils/cohortUtils";
 import chalk from 'chalk';
+import { Command } from "commander";
+import { eq } from "drizzle-orm";
 import inquirer from 'inquirer';
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { selectCohort } from "../utils/cohortUtils";
 
 export const extract = new Command()
     .name("extract")
@@ -150,7 +150,7 @@ export const extract = new Command()
             if (notebookMetrics.length > 0) {
                 try {
                     await db.insert(Run).values({
-                        runId: randomUUIDv7(),
+                        runId,
                         runHash: runId,
                         name: runName,
                         timestamp: new Date(),

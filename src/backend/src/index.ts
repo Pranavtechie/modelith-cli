@@ -1,11 +1,11 @@
-import { Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { initTRPC } from "@trpc/server";
-import { z } from "zod";
 import { db } from "@db/client";
-import { Cohort, Run, Similarity, Student, NotebookMetadata } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import { Cohort, NotebookMetadata, Run, Similarity, Student } from "@db/schema";
+import { cors } from "@elysiajs/cors";
+import { initTRPC } from "@trpc/server";
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { and, eq } from "drizzle-orm";
+import { Elysia } from "elysia";
+import { z } from "zod";
 
 // Initialize tRPC
 const trpc = initTRPC.create();
@@ -49,22 +49,18 @@ const appRouter = router({
   getSimilarityDataByRun: publicProcedure
     .input(z.string())
     .query(async ({ input }) => {
-      // Get all similarity data for this run
-      const similarities = await db
-        .select()
-        .from(Similarity)
-        .where(eq(Similarity.runId, input));
-
-      // Get all students from this run's cohort
+      // Get run and cohort
       const runData = await db
         .select()
         .from(Run)
         .where(eq(Run.runId, input))
         .limit(1);
-      if (!runData.length) return { data: [], students: [] };
+      if (!runData.length) return { data: [], students: [], defaulters: [] };
 
-      const cohortId = runData[0].cohortId;
-      const students = await db
+      const cohortId = runData[0]!.cohortId as string;
+
+      // Get all students in the cohort
+      const allStudents = await db
         .select({
           studentId: Student.studentId,
           name: Student.name,
@@ -73,9 +69,34 @@ const appRouter = router({
         .from(Student)
         .where(eq(Student.cohortId, cohortId));
 
-      // Format the data for the similarity matrix
-      // Create a matrix where each cell is the similarity score between two students
+      // Get all students who have submitted a notebook for this run
+      const submittedRows = await db
+        .select({ studentId: NotebookMetadata.studentId })
+        .from(NotebookMetadata)
+        .where(eq(NotebookMetadata.runId, input));
+      const submittedStudentIds: string[] = Array.from(
+        new Set(
+          submittedRows
+            .map((r) => r.studentId)
+            .filter((id): id is string => typeof id === "string"),
+        ),
+      );
+
+      // Only include students with submissions in the matrix
+      const students = allStudents.filter((s) => submittedStudentIds.includes(s.studentId));
       const studentIds = students.map((s) => s.studentId);
+      const labels = students.map((s) => s.regNo || s.name || s.studentId);
+
+      // Defaulters: students in cohort who have NOT submitted
+      const defaulters = allStudents.filter((s) => !submittedStudentIds.includes(s.studentId));
+
+      // Get all similarity data for this run
+      const similarities = await db
+        .select()
+        .from(Similarity)
+        .where(eq(Similarity.runId, input));
+
+      // Create a matrix where each cell is the similarity score between two students
       const matrix: number[][] = Array(studentIds.length)
         .fill(0)
         .map(() => Array(studentIds.length).fill(0));
@@ -89,26 +110,32 @@ const appRouter = router({
       similarities.forEach((sim) => {
         const indexA = studentIds.indexOf(sim.studentA);
         const indexB = studentIds.indexOf(sim.studentB);
-
-        if (indexA !== -1 && indexB !== -1) {
-          matrix[indexA][indexB] = sim.similarityScore;
+        if (
+          indexA !== -1 &&
+          indexB !== -1 &&
+          matrix[indexA] !== undefined &&
+          matrix[indexB] !== undefined
+        ) {
+          const targetRow = matrix[indexA];
+          if (targetRow) {
+            targetRow[indexB] = sim.similarityScore;
+          }
           // Fill symmetric part of matrix (if not already filled)
-          if (matrix[indexB][indexA] === 0 && indexA !== indexB) {
-            matrix[indexB][indexA] = sim.similarityScore;
+          const symmetricCell = matrix[indexB]?.[indexA];
+          if (symmetricCell === 0 && indexA !== indexB) {
+            matrix[indexB]![indexA] = sim.similarityScore;
           }
         }
       });
-
-      // Use student registration numbers or names as labels
-      const labels = students.map((s) => s.regNo || s.name || s.studentId);
 
       return {
         data: matrix,
         students: labels,
         studentIds: studentIds,
+        defaulters,
       };
     }),
-    
+
   getNotebookMetadataComparison: publicProcedure
     .input(z.object({
       runId: z.string(),
@@ -117,7 +144,7 @@ const appRouter = router({
     }))
     .query(async ({ input }) => {
       const { runId, studentA, studentB } = input;
-      
+
       // Get similarity data between these two students
       const similarity = await db
         .select()
@@ -130,7 +157,7 @@ const appRouter = router({
           )
         )
         .limit(1);
-        
+
       // If no direct match, try the reverse order
       const similarityData = similarity.length > 0 ? similarity[0] : await db
         .select()
@@ -144,7 +171,7 @@ const appRouter = router({
         )
         .limit(1)
         .then(data => data.length > 0 ? data[0] : null);
-      
+
       // Get notebook metadata for both students
       const notebookA = await db
         .select()
@@ -157,7 +184,7 @@ const appRouter = router({
         )
         .limit(1)
         .then(data => data.length > 0 ? data[0] : null);
-        
+
       const notebookB = await db
         .select()
         .from(NotebookMetadata)
@@ -169,7 +196,7 @@ const appRouter = router({
         )
         .limit(1)
         .then(data => data.length > 0 ? data[0] : null);
-        
+
       // Get student details
       const studentADetails = await db
         .select()
@@ -177,14 +204,14 @@ const appRouter = router({
         .where(eq(Student.studentId, studentA))
         .limit(1)
         .then(data => data.length > 0 ? data[0] : null);
-        
+
       const studentBDetails = await db
         .select()
         .from(Student)
         .where(eq(Student.studentId, studentB))
         .limit(1)
         .then(data => data.length > 0 ? data[0] : null);
-        
+
       return {
         similarity: similarityData,
         notebookA,
