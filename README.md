@@ -21,14 +21,16 @@ Modelith requires [Bun](https://bun.sh/) as its JavaScript runtime. First instal
 curl -fsSL https://bun.sh/install | bash
 ```
 
-Then you can install Modelith from npm:
+Then you can install Modelith using bun:
 
 ```bash
-# Install globally
 bun install -g modelith
+```
 
-# Or use without installing
-bun x modelith [command]
+To make use of `kaggle-dump` feature you have to install `playwright`. Use the command below
+
+```bash
+bunx -g playwright install --with-deps chromium
 ```
 
 ## Getting Started
@@ -41,73 +43,50 @@ modelith init
 
 This command sets up your configuration, initializes the local database, and ensures that necessary components like Playwright's browser (for features such as Kaggle notebook dumping) are ready. If Playwright (an optional feature) is installed, `init` will attempt to download the required browser version if it's missing.
 
-## Key Commands
+## Simple Tutorial
+
+**STEP 0: Initialize Modelith**
 
 ```bash
-# Initialize Modelith
-modelith init
+modelith init  # This will ensure all key components of modelith are installed and present. You don't need to run this everytime
+```
 
-# Start the web interface
+**STEP 1: Creating a new cohort**
+
+```bash
+modelith cohort create <cohort-name>
+```
+
+**STEP 2: Adding student's data to the cohort**
+
+Modelith current accepts `.csv` files only. The `.csv` file should contain two columns named `regno` and `name` (in lowercase). It can contain more columns, however only these two columns will be used.
+
+```bash
+modelith cohort upload-data <file-name>
+```
+
+**STEP 3: "Extracting" data from `.ipynb` files**
+
+Please ensure beforehand that you have all the `.ipynb` notebooks for the assignment are present in a single folder.
+
+```bash
+modelith extract -i <folder-name>
+```
+
+**STEP 4: Interactive Viewer in browser**
+
+```bash
 modelith start
-
-# Create a new cohort
-modelith cohort create
-
-# Extract notebook features
-modelith extract [options]
-
-# Generate a similarity heatmap
-modelith make-heatmap [options]
-
-# View all commands and options
-modelith --help
 ```
 
-## Web Interface
+Running this command will give you a link which when opened in a browser will give you the ability to view the similarity matrix and compare two different notebooks, we'll give comparision tables for metadata and side-by-side notebook cells for viewing.
 
-Modelith includes a web interface for visualizing and analyzing notebook comparisons:
+### Downloading Competition Notebooks from Kaggle.
+
+If you are using kaggle competitions for your assingments. Kaggle doesn't provide export functionality for all the notebooks. You can use `kaggle-dump` utility to perform this task.
+
+First, ensure to create a new folder on your computer. We'll use this path, and store all downloaded `.ipynb` notebooks here.
 
 ```bash
-# Start both frontend and backend servers
-modelith start
-
-# Start only frontend server
-modelith start --frontend
-
-# Start only backend server
-modelith start --backend
-
-# Customize ports
-modelith start --frontend-port 8080 --backend-port 8081
+modelith kaggle-dump -f <folder-name>
 ```
-
-## Development
-
-Modelith relies heavily on [Bun](https://bun.sh/) for package management and running the CLI. You can install Bun by following their [installation guide](https://bun.sh/docs/installation).
-
-Modelith uses some packages with native components (e.g., for code parsing and image processing). While `bun` typically handles these automatically, you might need a suitable build environment (like C++ compilers, Python) on certain OS/architectures if pre-built binaries are not available for your system.
-
-Ensure that database migration files (SQL files and snapshots in the `drizzle` directory, especially `drizzle/meta/_journal.json`) are up-to-date and committed to the repository, as these are crucial for the `modelith init` command to correctly set up the database schema.
-
-For development:
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/modelith-cli.git
-cd modelith-cli
-
-# Install dependencies
-bun install
-
-# Start in development mode
-bun run dev
-
-# Build for distribution
-bun run build
-```
-
-For more details on the bundling strategy, see [BUNDLING.md](./BUNDLING.md).
-
-## Documentation
-
-You can view the docs at [docs.modelith.com](https://docs.modelith.com) for more information on how to use the tool.
