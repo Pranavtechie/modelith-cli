@@ -1,11 +1,8 @@
 import * as fs from 'fs';
-import { join, basename } from 'path';
-import * as d3 from 'd3';
-import { JSDOM } from 'jsdom';
-import svg2img from 'svg2img'; // Assuming svg2img types might need adjustment
-import { Worker } from 'worker_threads'; // Import Worker
-import os from 'os'; // Import os to get CPU count
 import ora from 'ora';
+import os from 'os'; // Import os to get CPU count
+import { join } from 'path';
+import { Worker } from 'worker_threads'; // Import Worker
 
 // Define the AST Node structure (adjust based on your actual AST structure)
 interface AstNode {
@@ -298,116 +295,6 @@ export async function compareAstsInFolder(folderPath: string): Promise<Compariso
         }
     }
 
-
-    // Generate heatmap plot - using D3.js and convert SVG to PNG with canvas
-    try {
-        spinner.start("\nGenerating heatmap using D3.js");
-        const cellSize = 20; // Smaller cells for potentially many files
-        const maxLabelLength = 20; // Limit label length
-        const margin = { top: 50, right: 50, bottom: 150, left: 150 }; // Increased margins for rotated labels
-        const plotWidth = cellSize * numAsts;
-        const plotHeight = cellSize * numAsts;
-        const totalWidth = plotWidth + margin.left + margin.right;
-        const totalHeight = plotHeight + margin.top + margin.bottom;
-
-        const dom = new JSDOM('<!DOCTYPE html><body></body>');
-        const body = d3.select(dom.window.document.body);
-        const svg = body.append('svg')
-            .attr('width', totalWidth)
-            .attr('height', totalHeight)
-            .append('g') // Group for margins
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        const colorScale = d3.scaleSequential(d3.interpolateViridis)
-            .domain([0, 1]); // Similarity domain is 0 to 1
-
-        // Add cells with explicit types for parameters
-        similarityScores.forEach((row: number[], i: number) => {
-            row.forEach((value: number, j: number) => {
-                svg.append('rect')
-                    .attr('x', j * cellSize)
-                    .attr('y', i * cellSize)
-                    .attr('width', cellSize)
-                    .attr('height', cellSize)
-                    .attr('fill', colorScale(value))
-                    .attr('stroke', '#eee') // Lighter stroke
-                    .attr('stroke-width', 0.5);
-            });
-        });
-
-        // Add labels
-        const shortFilenames = filenames.map(f => {
-            const base = basename(f || '', '.ast.json'); // Handle potential undefined filename
-            return base.length > maxLabelLength ? base.substring(0, maxLabelLength) + '...' : base;
-        });
-
-        // X-axis labels
-        svg.selectAll('.x-label')
-            .data(shortFilenames)
-            .enter()
-            .append('text')
-            .attr('class', 'x-label')
-            .style('font-size', '8px')
-            .attr('text-anchor', 'end') // Anchor at the end for rotation
-            // Position at bottom, rotate around the end point
-            .attr('transform', (d, i) => `translate(${i * cellSize + cellSize / 2}, ${plotHeight + 5}) rotate(-65)`)
-            .text(d => d);
-
-        // Y-axis labels
-        svg.selectAll('.y-label')
-            .data(shortFilenames)
-            .enter()
-            .append('text')
-            .attr('class', 'y-label')
-            .style('font-size', '8px')
-            .attr('text-anchor', 'end')
-            .attr('dominant-baseline', 'middle')
-            // Position left of heatmap
-            .attr('transform', (d, i) => `translate(-5, ${i * cellSize + cellSize / 2})`)
-            .text(d => d);
-
-        // Add a title
-        svg.append("text")
-            .attr("x", plotWidth / 2)
-            .attr("y", 0 - (margin.top / 2))
-            .attr("text-anchor", "middle")
-            .style("font-size", "16px")
-            .style("text-decoration", "underline")
-            .text("AST Similarity Heatmap");
-
-        // Serialize and save
-        const svgElement = dom.window.document.querySelector('svg');
-        if (!svgElement) {
-            throw new Error("SVG element not found after D3 generation.");
-        }
-        const svgData = new dom.window.XMLSerializer().serializeToString(svgElement);
-
-        spinner.text = "Converting SVG to PNG...";
-        // Use 'as any' for format if type issues persist with svg2img
-        svg2img(svgData, { format: 'png' as any }, (error, buffer) => {
-            if (error) {
-                spinner.fail(`Error converting SVG to PNG: ${error}`);
-                return;
-            }
-            try {
-                fs.writeFileSync('ast_similarity_heatmap.png', buffer);
-                spinner.succeed("Heatmap saved as ast_similarity_heatmap.png");
-            } catch (writeError) {
-                spinner.fail(`Error writing PNG file: ${writeError}`);
-            }
-        });
-    } catch (error) {
-        spinner.fail(`Error generating plot with D3: ${error}`);
-    }
-
-    // Store results in a JSON file
-    const resultsFilename = "ast_comparison_results.json";
-    try {
-        fs.writeFileSync(resultsFilename, JSON.stringify(results, null, 2));
-        console.log(`AST comparison complete. Results stored in ${resultsFilename}`);
-    } catch (error) {
-        console.error(`Error writing results to file ${resultsFilename}: ${error}`);
-    }
 
     return results;
 }

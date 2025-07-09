@@ -2,6 +2,7 @@ import envPaths from 'env-paths';
 import { join } from 'path';
 
 const paths = envPaths('modelith', { suffix: '' });
+export { paths };
 export const configPath = join(paths.config, 'config.json');
 export const dbPath = join(paths.data, 'modelith-db.sqlite');
 

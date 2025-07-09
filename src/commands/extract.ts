@@ -1,3 +1,4 @@
+import { paths } from "@/utils/config";
 import { db } from "@db/client";
 import { NotebookMetadata, Run, Similarity, Student } from "@db/schema";
 import { compareAstsInFolder } from "@utils/ast-comparison";
@@ -19,17 +20,19 @@ export const extract = new Command()
     .name("extract")
     .description("Extract metadata, metrics, and ASTs from Jupyter notebooks")
     .option("-i, --input <input>", "Folder containing Jupyter Notebooks", process.cwd())
-    .option("-o, --output <output>", "Output directory for analysis results", "modelith-analysis")
     .action(async (options) => {
-        const paths = {
+        // Generate runId early for namespacing
+        const runId = (await generateFolderHash(resolve(options.input))) ?? randomUUIDv7();
+        const pathsOut = {
             folder: resolve(options.input),
-            outputBase: resolve(options.output),
-            astOutput: join(resolve(options.output), 'ast_files'),
-            evaluationFile: join(resolve(options.output), 'evaluation.json'),
+            dataBase: paths.data,
+            runBase: join(paths.data, "data", runId),
+            astOutput: join(paths.data, "data", runId, "ast"),
+            sourceCodeOutput: join(paths.data, "data", runId, "source-code"),
         };
 
-        console.log(`Analyzing notebooks in: ${chalk.blue(paths.folder)}`);
-        console.log(`Outputting results to: ${chalk.green(paths.outputBase)}\n\n`);
+        console.log(`Analyzing notebooks in: ${chalk.blue(pathsOut.folder)}`);
+        console.log(`Outputting results to: ${chalk.green(pathsOut.runBase)}\n\n`);
 
         try {
             const selectedCohort = await selectCohort();
@@ -39,6 +42,21 @@ export const extract = new Command()
             }
 
             const cohortId = selectedCohort.cohortId;
+
+            // Query all students in the cohort and build regNo -> studentId map
+            let regNoToStudentId: Record<string, string> = {};
+            try {
+                const students = await db.select({ regNo: Student.regNo, studentId: Student.studentId })
+                    .from(Student)
+                    .where(eq(Student.cohortId, cohortId));
+                regNoToStudentId = students.reduce((acc, s) => {
+                    if (s.regNo && s.studentId) acc[s.regNo] = s.studentId;
+                    return acc;
+                }, {} as Record<string, string>);
+            } catch (err) {
+                console.error('Error fetching students for cohort:', err);
+                return;
+            }
 
             // Prompt user for a unique run name for this cohort
             let runName: string | undefined;
@@ -69,7 +87,7 @@ export const extract = new Command()
             }
 
             // Ensure output directories exist
-            for (const dir of [paths.outputBase, paths.astOutput]) {
+            for (const dir of [pathsOut.dataBase, pathsOut.runBase, pathsOut.astOutput, pathsOut.sourceCodeOutput]) {
                 if (!existsSync(dir)) {
                     await mkdir(dir, { recursive: true });
                     console.log(`Created directory: ${dir}`);
@@ -77,33 +95,31 @@ export const extract = new Command()
             }
 
             // Validate input folder and get file mapping
-            const analysisResult: SanitizationResult = await analyzeFilenames(paths.folder);
+            const analysisResult: SanitizationResult = await analyzeFilenames(pathsOut.folder);
             if (analysisResult.totalFilesInDirectory === 0) {
                 console.log("No .ipynb files found in the specified directory. Exiting.");
                 return;
             }
 
-            const runId = (await generateFolderHash(paths.folder)) ?? randomUUIDv7();
-
-            const evaluation = {};
             const notebookMetrics: NotebookMetadataObject[] = [];
 
             for (const [originalFilename, regNo] of Object.entries(analysisResult.validFiles)) {
+                const studentId = regNoToStudentId[regNo];
+                if (!studentId) {
+                    console.error(`No studentId found for regNo ${regNo}, skipping file ${originalFilename}`);
+                    continue;
+                }
                 const filePaths = {
-                    original: join(paths.folder, originalFilename),
-                    ast: join(paths.astOutput, `${regNo}.ast.json`),
+                    original: join(pathsOut.folder, originalFilename),
+                    ast: join(pathsOut.astOutput, `${studentId}.ast.json`),
+                    source: join(pathsOut.sourceCodeOutput, `${studentId}.ipynb`),
                 };
 
-                let studentId: string | null = null;
-
+                // Copy the .ipynb file to the new source-code folder
                 try {
-                    const student = await db.select({ id: Student.studentId })
-                        .from(Student)
-                        .where(eq(Student.regNo, regNo))
-                        .limit(1);
-                    studentId = student[0]?.id ?? null;
-                } catch (error) {
-                    console.error(`Error querying student for regNo ${regNo}: ${String(error)}`);
+                    await Bun.write(filePaths.source, await Bun.file(filePaths.original).arrayBuffer());
+                } catch (copyError) {
+                    console.error(`Error copying ${originalFilename} to source-code folder: ${String(copyError)}`);
                 }
 
                 try {
@@ -111,36 +127,21 @@ export const extract = new Command()
                     const metrics = await analyzer.getMetrics();
                     const ast = analyzer.getAst();
 
+                    // Store the relative path from paths.data to the copied .ipynb file
+                    const relativeSourcePath = join(runId, "source-code", `${studentId}.ipynb`);
 
                     notebookMetrics.push({
                         ...metrics,
-                        filename: regNo,
+                        filename: relativeSourcePath,
                         runId,
-                        studentId
+                        studentId,
                     });
 
-                    if (ast) await analyzer.saveAstToFile(paths.astOutput, regNo);
+                    if (ast) await analyzer.saveAstToFile(pathsOut.astOutput, studentId);
 
-                    evaluation[regNo] = {
-                        originalFilename,
-                        status: 'processed',
-                        metricsSummary: {
-                            totalCells: metrics.totalCells,
-                            codeCells: metrics.codeCells,
-                            markdownCells: metrics.markdownCells,
-                            errors: metrics.errorCellCount,
-                        },
-                        astPath: ast ? join('ast_files', `${regNo}.ast.json`) : null,
-                        studentId,
-                    };
                 } catch (error) {
-                    console.error(`Error processing ${originalFilename}: ${error.message}`);
-                    evaluation[regNo] = {
-                        originalFilename,
-                        status: 'error',
-                        error: error.message,
-                        studentId,
-                    };
+                    const errMsg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : String(error);
+                    console.error(`Error processing ${originalFilename}: ${errMsg}`);
                 }
             }
 
@@ -161,37 +162,32 @@ export const extract = new Command()
                     await db.insert(NotebookMetadata).values(notebookMetrics);
                     console.log(`Inserted ${notebookMetrics.length} notebook records into the database.`);
                 } catch (error) {
-                    console.error(`Database error: ${error.message}`);
+                    const errMsg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : String(error);
+                    console.error(`Database error: ${errMsg}`);
                 }
             }
 
-            // Save evaluation summary
-            await Bun.write(paths.evaluationFile, JSON.stringify(evaluation, null, 2));
-            console.log(`Evaluation summary saved to: ${paths.evaluationFile}`);
-
             // Perform AST Comparison
-            const processedCount = Object.values(evaluation).filter(v => v.status === 'processed').length;
+            const processedCount = notebookMetrics.length;
             if (processedCount >= 2) {
                 try {
-                    const similarityResults = await compareAstsInFolder(paths.astOutput);
+                    const similarityResults = await compareAstsInFolder(pathsOut.astOutput);
                     if (similarityResults && similarityResults.length > 0) {
-                        // Map regNo to studentId for quick lookup
-                        const regNoToStudentId = Object.entries(analysisResult.validFiles).reduce((acc, [orig, regNo]) => {
-                            const sid = notebookMetrics.find(m => m.filename === regNo)?.studentId;
-                            if (sid) acc[regNo] = sid;
-                            return acc;
-                        }, {} as Record<string, string>);
-                        const similarityRows = similarityResults.map(({ file1, file2, editDistance, similarity }) => {
-                            const studentA = regNoToStudentId[file1.replace(/\.ast\.json$/, '')] || null;
-                            const studentB = regNoToStudentId[file2.replace(/\.ast\.json$/, '')] || null;
-                            return {
-                                runId,
-                                studentA,
-                                studentB,
-                                similarityScore: similarity,
-                                treeEditDistance: editDistance
-                            };
-                        }).filter(row => row.studentA && row.studentB);
+                        // Map studentId to studentId for quick lookup (identity)
+                        const similarityRows = similarityResults
+                            .map(({ file1, file2, editDistance, similarity }) => {
+                                const studentA = file1.replace(/\.ast\.json$/, '');
+                                const studentB = file2.replace(/\.ast\.json$/, '');
+                                return {
+                                    runId,
+                                    studentA,
+                                    studentB,
+                                    similarityScore: similarity,
+                                    treeEditDistance: editDistance
+                                };
+                            })
+                            .filter(row => row.studentA && row.studentB && row.studentA !== row.studentB)
+                            .map(row => ({ ...row, studentA: row.studentA as string, studentB: row.studentB as string }));
                         try {
                             if (similarityRows.length > 0) {
                                 await db.insert(Similarity).values(similarityRows);
@@ -200,12 +196,14 @@ export const extract = new Command()
                                 console.log('No valid similarity records to insert.');
                             }
                         } catch (dbError) {
-                            console.error(`Database error inserting similarity results: ${dbError.message}`);
+                            const errMsg = (typeof dbError === 'object' && dbError && 'message' in dbError) ? (dbError as any).message : String(dbError);
+                            console.error(`Database error inserting similarity results: ${errMsg}`);
                         }
                     }
-                    console.log(`AST comparison results saved in ${paths.outputBase}`);
+                    console.log(`AST comparison results saved in ${pathsOut.runBase}`);
                 } catch (error) {
-                    console.error(`AST comparison failed: ${String(error)}`);
+                    const errMsg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : String(error);
+                    console.error(`AST comparison failed: ${errMsg}`);
                 }
             } else {
                 console.log(`Skipping AST comparison: Only ${processedCount} notebook(s) processed successfully.`);
@@ -214,9 +212,9 @@ export const extract = new Command()
             console.log("\nExtraction process completed.");
             process.exit(0)
 
-
         } catch (error) {
-            console.error(`\nAn error occurred during the extraction process: ${error.message}`);
-            if (error.stack) console.error(error.stack);
+            const errMsg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : String(error);
+            console.error(`\nAn error occurred during the extraction process: ${errMsg}`);
+            if (error && typeof error === 'object' && 'stack' in error) console.error((error as any).stack);
         }
     });

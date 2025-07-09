@@ -1,13 +1,13 @@
 import { Command } from "commander";
+import * as d3 from 'd3';
+import { eq, inArray } from 'drizzle-orm';
+import fs from 'fs';
 import inquirer from 'inquirer';
+import { JSDOM } from 'jsdom';
+import ora from 'ora';
+import svg2img from 'svg2img';
 import { db } from '../db/client';
 import { Run, Similarity, Student } from '../db/schema';
-import ora from 'ora';
-import * as d3 from 'd3';
-import { JSDOM } from 'jsdom';
-import svg2img from 'svg2img';
-import fs from 'fs';
-import { eq, inArray } from 'drizzle-orm';
 
 export const makeHeatmap = new Command()
     .name("make-heatmap")

@@ -48,7 +48,6 @@ export interface SanitizationResult {
  * Defines the structure for Notebook Metadata based on the database schema.
  */
 export interface NotebookMetadataObject {
-    notebookId: string;
     runId: string | null;
     filename: string;
     totalCells: number | null;
