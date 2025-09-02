@@ -14,6 +14,7 @@ import {
   TooltipProvider
 } from "@frontend/components/ui/tooltip";
 import * as d3 from "d3";
+import { Download } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "../main";
 
@@ -36,17 +37,20 @@ export const Route = createFileRoute("/")({
   },
   preloadStaleTime: 1000 * 60 * 5, // 5 minutes
   loaderDeps: ({ search }) => [search.cohortId, search.runId],
-  loader: ({ context: { queryClient }, deps }) => {
+  loader: ({ context, deps }) => {
+    const queryClient = (context as any).queryClient;
     const [cohortId, runId] = deps;
 
     // Preload cohorts
-    queryClient.prefetchQuery({
-      queryKey: ["trpc", "getCohorts"],
-      staleTime: Infinity, // Cohorts don't change very often
-    });
+    if (queryClient) {
+      queryClient.prefetchQuery({
+        queryKey: ["trpc", "getCohorts"],
+        staleTime: Infinity, // Cohorts don't change very often
+      });
+    }
 
     // Preload runs if cohortId is provided
-    if (cohortId) {
+    if (cohortId && queryClient) {
       queryClient.prefetchQuery({
         queryKey: ["trpc", "getRunsByCohort", { input: cohortId }],
         staleTime: Infinity, // Runs for a cohort don't change once created
@@ -54,7 +58,7 @@ export const Route = createFileRoute("/")({
     }
 
     // Preload similarity data if runId is provided
-    if (runId) {
+    if (runId && queryClient) {
       queryClient.prefetchQuery({
         queryKey: ["trpc", "getSimilarityDataByRun", { input: runId }],
         staleTime: Infinity, // Similarity data is static once generated
@@ -67,6 +71,54 @@ export const Route = createFileRoute("/")({
 
 // Define a more specific type for hovered cell
 type HoveredCell = { x: number; y: number; value: number } | null;
+
+// CSV download utility function
+const downloadCSV = (data: number[][], xLabels: string[], yLabels: string[], runId: string) => {
+  // Validate inputs
+  if (!data || !xLabels || !yLabels || !runId) {
+    console.error('Invalid data provided for CSV download');
+    return;
+  }
+
+  // Collect all pairs with their values
+  const pairs: { studentOne: string; studentTwo: string; similarityScore: number }[] = [];
+
+  data.forEach((row, i) => {
+    row.forEach((value, j) => {
+      // Only add pairs from upper triangle (above diagonal) to avoid duplicates
+      if (i < j) {
+        pairs.push({
+          studentOne: xLabels[i] || '',
+          studentTwo: yLabels[j] || '',
+          similarityScore: value
+        });
+      }
+    });
+  });
+
+  // Sort by similarity score in descending order
+  pairs.sort((a, b) => b.similarityScore - a.similarityScore);
+
+  // Convert to CSV format
+  const csvHeader = "student_one,student_two,similarity_score\n";
+  const csvRows = pairs.map(pair =>
+    `"${pair.studentOne}","${pair.studentTwo}",${pair.similarityScore.toFixed(4)}`
+  ).join('\n');
+
+  const csvContent = csvHeader + csvRows;
+
+  // Create and trigger download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `similarity_scores_${runId}_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 // D3 Heatmap Component
 const D3HeatMap = ({
@@ -146,10 +198,13 @@ const D3HeatMap = ({
       .style("text-anchor", "end")
       .attr("dx", "-.8em")
       .attr("dy", ".15em")
-      .attr("transform", "rotate(-65)");
+      .attr("transform", "rotate(-65)")
+      .text((d: any) => d || '');
 
     // Add Y axis labels with better visibility
-    svg.append("g").style("font-size", "12px").call(d3.axisLeft(y));
+    svg.append("g").style("font-size", "12px").call(d3.axisLeft(y))
+      .selectAll("text")
+      .text((d: any) => d || '');
 
     // Create visual guide for lower half (not displayed)
     svg
@@ -176,8 +231,8 @@ const D3HeatMap = ({
         // Create the cell
         const rect = svg
           .append("rect")
-          .attr("x", x(xLabels[j]) || 0)
-          .attr("y", y(yLabels[i]) || 0)
+          .attr("x", x(xLabels[j] || '') || 0)
+          .attr("y", y(yLabels[i] || '') || 0)
           .attr("width", x.bandwidth())
           .attr("height", y.bandwidth())
           .style("fill", getColor(value))
@@ -201,8 +256,8 @@ const D3HeatMap = ({
         if (showValueText) {
           svg
             .append("text")
-            .attr("x", (x(xLabels[j]) || 0) + x.bandwidth() / 2)
-            .attr("y", (y(yLabels[i]) || 0) + y.bandwidth() / 2)
+            .attr("x", (x(xLabels[j] || '') || 0) + x.bandwidth() / 2)
+            .attr("y", (y(yLabels[i] || '') || 0) + y.bandwidth() / 2)
             .attr("text-anchor", "middle")
             .attr("dominant-baseline", "middle")
             .style("fill", value > 0.7 ? "#000" : "#fff")
@@ -401,21 +456,21 @@ export default function SimilarityMatrix() {
   // Fetch cohorts with infinite cache
   const cohortsQuery = trpc.getCohorts.useQuery(undefined, {
     staleTime: Infinity, // Data never goes stale
-    cacheTime: Infinity, // Cache never expires
+    gcTime: Infinity, // Cache never expires
   });
 
   // Fetch runs based on selected cohort with infinite cache
   const runsQuery = trpc.getRunsByCohort.useQuery(cohortId, {
     enabled: cohortId !== "",
     staleTime: Infinity,
-    cacheTime: Infinity,
+    gcTime: Infinity,
   });
 
   // Fetch similarity data based on selected run with infinite cache
   const similarityQuery = trpc.getSimilarityDataByRun.useQuery(runId, {
     enabled: runId !== "",
     staleTime: Infinity,
-    cacheTime: Infinity,
+    gcTime: Infinity,
   });
 
   // Set labels and data based on query results
@@ -493,7 +548,7 @@ export default function SimilarityMatrix() {
   // Touch event handlers
   useEffect(() => {
     const handleTouchMove = (e: TouchEvent) => {
-      if (isDraggingLeft || isDraggingRight) {
+      if ((isDraggingLeft || isDraggingRight) && e.touches && e.touches[0]) {
         handleMove(e.touches[0].clientX);
       }
     };
@@ -515,10 +570,11 @@ export default function SimilarityMatrix() {
   const handleCellClick = useCallback(
     (x: number, y: number) => {
       // Get the studentIds from indices
-      if (!similarityQuery.data?.studentIds) return;
+      const data = similarityQuery.data;
+      if (!data || !('studentIds' in data) || !data.studentIds || !runId) return;
 
-      const studentIdA = similarityQuery.data.studentIds[y]; // y is the row index
-      const studentIdB = similarityQuery.data.studentIds[x]; // x is the column index
+      const studentIdA = data.studentIds[y]; // y is the row index
+      const studentIdB = data.studentIds[x]; // x is the column index
 
       // Create encoded parameter with runId and studentIds
       navigate({
@@ -526,7 +582,7 @@ export default function SimilarityMatrix() {
         params: { pair: `${runId}:${studentIdA}:${studentIdB}` },
       });
     },
-    [navigate, runId, similarityQuery.data?.studentIds],
+    [navigate, runId, similarityQuery.data],
   );
 
   const renderMatrix = () => (
@@ -685,26 +741,41 @@ export default function SimilarityMatrix() {
     pairs.sort((a, b) => b.value - a.value);
 
     return (
-      <div className="space-y-3 max-h-[800px] overflow-y-auto p-2">
-        {pairs.length > 0 ? (
-          pairs.map(({ i, j, value }) => (
-            <ListItem
-              key={`${i}-${j}`}
-              i={i}
-              j={j}
-              value={value}
-              xLabel={xLabels[i]}
-              yLabel={yLabels[j]}
-              leftValue={leftValue}
-              rightValue={rightValue}
-              onClick={() => handleCellClick(j, i)}
-            />
-          ))
-        ) : (
-          <div className="text-center p-6 text-gray-500">
-            No similarity data to display
-          </div>
-        )}
+      <div className="space-y-3">
+        {/* Download CSV Button */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={() => downloadCSV(data, xLabels, yLabels, runId || '')}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download (CSV)
+          </Button>
+        </div>
+
+        {/* List Items */}
+        <div className="max-h-[800px] overflow-y-auto p-2">
+          {pairs.length > 0 ? (
+            pairs.map(({ i, j, value }) => (
+              <ListItem
+                key={`${i}-${j}`}
+                i={i}
+                j={j}
+                value={value}
+                xLabel={xLabels[i] || ''}
+                yLabel={yLabels[j] || ''}
+                leftValue={leftValue}
+                rightValue={rightValue}
+                onClick={() => handleCellClick(j, i)}
+              />
+            ))
+          ) : (
+            <div className="text-center p-6 text-gray-500">
+              No similarity data to display
+            </div>
+          )}
+        </div>
       </div>
     );
   };

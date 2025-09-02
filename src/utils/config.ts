@@ -6,6 +6,8 @@ export { paths };
 export const configPath = join(paths.config, 'config.json');
 export const dbPath = join(paths.data, 'modelith-db.sqlite');
 
+// for MacOS: /Users/<username>/Library/Application Support/modelith/modelith-db.sqlite
+
 export async function loadEnv() {
     await verifyConfigFile();
     const config = await Bun.file(configPath).json();
